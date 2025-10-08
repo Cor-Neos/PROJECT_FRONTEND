@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Download, Trash2, FileText, Search, Filter, X } from "lucide-react";
+import { Download, Trash2, FileText, Search, Filter, X, Lock } from "lucide-react";
 
 const Documents = () => {
     const [error, setError] = useState("");
@@ -8,6 +8,15 @@ const Documents = () => {
     const [showFilterModal, setShowFilterModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [docToDelete, setDocToDelete] = useState(null);
+
+    // Password modal state
+    const [passwordModal, setPasswordModal] = useState({ open: false, doc: null });
+    const [docPassword, setDocPassword] = useState("");
+    const [pwdLoading, setPwdLoading] = useState(false);
+    const [pwdError, setPwdError] = useState("");
+
+    // Short-lived token per doc_id
+    const [docTokens, setDocTokens] = useState({});
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -45,6 +54,93 @@ const Documents = () => {
             setDocuments(documents.filter((doc) => doc.doc_id !== docToDelete.doc_id));
             setDocToDelete(null);
             setShowDeleteModal(false);
+        }
+    };
+
+    // Secure download helpers
+    const openBlobInNewTab = async (response) => {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, "_blank", "noopener,noreferrer");
+        // Optional: revoke after some delay
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    };
+
+    const downloadWithToken = async (doc, token) => {
+        try {
+            const res = await fetch(`http://localhost:3000/api/documents/${doc.doc_id}/download`, {
+                method: "GET",
+                credentials: "include",
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
+            if (res.status === 401) {
+                // token missing/expired or password required
+                throw new Error("Password required or token expired");
+            }
+            if (!res.ok) throw new Error(`Download failed (${res.status})`);
+            await openBlobInNewTab(res);
+        } catch (e) {
+            // If protected, open modal
+            if (doc.requires_password_for_current_user) {
+                setPwdError("");
+                setDocPassword("");
+                setPasswordModal({ open: true, doc });
+            } else {
+                setError(e.message || "Failed to download");
+            }
+        }
+    };
+
+    const handleView = async (doc) => {
+        setError("");
+        const token = docTokens[doc.doc_id];
+        // If not protected for this user, try without token
+        if (!doc.requires_password_for_current_user) {
+            return downloadWithToken(doc, undefined);
+        }
+        // Protected: if we already have a token, try it; else open modal
+        if (token) {
+            return downloadWithToken(doc, token);
+        }
+        setPwdError("");
+        setDocPassword("");
+        setPasswordModal({ open: true, doc });
+    };
+
+    const submitPassword = async () => {
+        if (!passwordModal.doc) return;
+        setPwdLoading(true);
+        setPwdError("");
+        try {
+            const res = await fetch(`http://localhost:3000/api/documents/${passwordModal.doc.doc_id}/verify-password`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ password: docPassword }),
+            });
+            if (res.status === 400) {
+                // Not password-protected or already allowed; try download without token
+                setPasswordModal({ open: false, doc: null });
+                setDocPassword("");
+                return downloadWithToken(passwordModal.doc, undefined);
+            }
+            if (res.status === 401) {
+                setPwdError("Invalid password");
+                return;
+            }
+            if (!res.ok) throw new Error(`Verify failed (${res.status})`);
+            const data = await res.json();
+            const token = data?.token;
+            if (!token) throw new Error("No token returned");
+            setDocTokens((prev) => ({ ...prev, [passwordModal.doc.doc_id]: token }));
+            const targetDoc = passwordModal.doc;
+            setPasswordModal({ open: false, doc: null });
+            setDocPassword("");
+            await downloadWithToken(targetDoc, token);
+        } catch (e) {
+            setPwdError(e.message || "Verification failed");
+        } finally {
+            setPwdLoading(false);
         }
     };
 
@@ -141,15 +237,23 @@ const Documents = () => {
                                         <td className="px-4 py-3">{doc.doc_submitted_by}</td>
                                         <td className="flex justify-center gap-4 px-4 py-3">
                                             <div className="flex items-center gap-3">
-                                                <a
-                                                    href={`http://localhost:3000${doc.doc_file}`}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    className="inline-flex items-center gap-1 rounded-md border border-blue-600 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800"
-                                                >
-                                                    <FileText size={14} />
-                                                    View
-                                                </a>
+                                                {doc.requires_password_for_current_user ? (
+                                                    <button
+                                                        onClick={() => handleView(doc)}
+                                                        className="inline-flex items-center gap-1 rounded-md border border-amber-500 px-2 py-1 text-xs font-medium text-amber-700 hover:bg-amber-50 dark:hover:bg-slate-800"
+                                                    >
+                                                        <Lock size={14} />
+                                                        Unlock & View
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => handleView(doc)}
+                                                        className="inline-flex items-center gap-1 rounded-md border border-blue-600 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800"
+                                                    >
+                                                        <FileText size={14} />
+                                                        View
+                                                    </button>
+                                                )}
                                             </div>
                                             <button
                                                 className="text-red-500 hover:text-red-700"
@@ -274,6 +378,66 @@ const Documents = () => {
                                 className="rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700"
                             >
                                 Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Password Prompt Modal */}
+            {passwordModal.open && passwordModal.doc && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+                    onClick={() => setPasswordModal({ open: false, doc: null })}
+                >
+                    <div
+                        className="relative w-full max-w-sm rounded-lg bg-white p-6 shadow-lg dark:bg-slate-800"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button
+                            onClick={() => setPasswordModal({ open: false, doc: null })}
+                            className="absolute right-3 top-3 text-gray-500 hover:text-black dark:text-slate-300"
+                        >
+                            <X size={20} />
+                        </button>
+                        <h2 className="mb-2 text-lg font-semibold text-gray-800 dark:text-white">Enter Document Password</h2>
+                        <p className="mb-4 text-sm text-gray-600 dark:text-slate-300">
+                            This document is protected. Please enter the password to continue.
+                        </p>
+                        {pwdError && (
+                            <div className="mb-3 rounded bg-red-600 px-3 py-2 text-sm text-white">
+                                {pwdError}
+                            </div>
+                        )}
+                        <input
+                            type="password"
+                            className="mb-4 w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-blue-600 focus:ring-blue-400 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+                            placeholder="Password"
+                            value={docPassword}
+                            onChange={(e) => setDocPassword(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') submitPassword(); }}
+                            autoFocus
+                        />
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setPasswordModal({ open: false, doc: null })}
+                                className="rounded bg-gray-300 px-4 py-2 hover:bg-gray-400 dark:bg-slate-600 dark:text-white dark:hover:bg-slate-500"
+                                disabled={pwdLoading}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={submitPassword}
+                                className="inline-flex items-center gap-2 rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-60"
+                                disabled={pwdLoading || !docPassword}
+                            >
+                                {pwdLoading && (
+                                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                    </svg>
+                                )}
+                                Unlock
                             </button>
                         </div>
                     </div>
