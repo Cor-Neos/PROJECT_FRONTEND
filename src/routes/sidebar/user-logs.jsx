@@ -81,7 +81,8 @@ const Userlogs = () => {
     if (/new case/i.test(action)) return "New Case Added";
     if (/archived/i.test(action)) return "Case Archived";
     if (/updated case/i.test(action)) return "Case Update";
-    if (/task/i.test(action)) return "Task";
+    if (/task added/i.test(action)) return "New Task Added";
+    if (/task updated/i.test(action)) return "Task Updated";
     if (/fail|error/i.test(action)) return "Error";
     return "Action";
   };
