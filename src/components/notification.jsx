@@ -1,180 +1,184 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Settings } from "lucide-react";
+import { Trash2, Mail, MailOpen, X, Search, User } from "lucide-react";
+import { useAuth } from "@/context/auth-context";
 
 const Notifications = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
+
   const [notifications, setNotifications] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10; // number of notifications per page
+  const [selectedNotifications, setSelectedNotifications] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedNotification, setSelectedNotification] = useState(null); // 🔹 For modal
 
-  const totalPages = Math.ceil(notifications.length / pageSize);
-
-  // Helper to show "x minutes/hours/days ago"
-  const timeAgo = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const seconds = Math.floor((now - date) / 1000);
-
-    let interval = Math.floor(seconds / 31536000);
-    if (interval >= 1) return interval === 1 ? "1 year ago" : `${interval} years ago`;
-
-    interval = Math.floor(seconds / 2592000);
-    if (interval >= 1) return interval === 1 ? "1 month ago" : `${interval} months ago`;
-
-    interval = Math.floor(seconds / 86400);
-    if (interval >= 1) return interval === 1 ? "1 day ago" : `${interval} days ago`;
-
-    interval = Math.floor(seconds / 3600);
-    if (interval >= 1) return interval === 1 ? "1 hour ago" : `${interval} hours ago`;
-
-    interval = Math.floor(seconds / 60);
-    if (interval >= 1) return interval === 1 ? "1 minute ago" : `${interval} minutes ago`;
-
-    return "Just now";
+  // Fetch notifications
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch(`http://localhost:3000/api/notifications/${user.user_id}`, {
+        method: "GET",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (res.ok) setNotifications(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Error fetching notifications:", err);
+      setNotifications([]);
+    }
   };
 
-  // Fetch notifications when component mounts
   useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const res = await fetch("http://localhost:3000/api/notifications", {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        const data = await res.json();
-
-        if (res.ok) {
-          setNotifications(data);
-        } else {
-          console.error("Failed to fetch notifications:", data.error);
-        }
-      } catch (err) {
-        console.error("Error fetching notifications:", err);
-      }
-    };
-
     fetchNotifications();
   }, []);
 
-  // Mark all as read (frontend-only for now)
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((note) => ({ ...note, is_read: true })));
+  const allSelected = notifications.length > 0 && selectedNotifications.length === notifications.length;
+  const allSelectedAreRead = notifications.filter((n) => selectedNotifications.includes(n.notification_id)).every((n) => n.is_read);
+
+  const toggleSelectedReadStatus = () => {
+    setNotifications((prev) => prev.map((n) => (selectedNotifications.includes(n.notification_id) ? { ...n, is_read: !n.is_read } : n)));
   };
 
-  // Clear all (frontend-only for now)
   const clearAll = () => {
     setNotifications([]);
+    setSelectedNotifications([]);
   };
 
-  // Paginated notifications
-  const startIdx = (currentPage - 1) * pageSize;
-  const paginatedNotifications = notifications.slice(startIdx, startIdx + pageSize);
+  const filteredNotifications = notifications.filter((note) => note.notification_message.toLowerCase().includes(searchQuery.trim().toLowerCase()));
 
   return (
-    <div>
-      <div className="bg-blue rounded-xl p-4 shadow-sm dark:bg-slate-900 sm:p-6">
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-gray-800 dark:text-white sm:text-2xl">Notifications</h1>
-            <p className="text-sm text-gray-500">Manage how you receive notifications and updates</p>
+    <div className="min-h-screen w-full bg-transparent p-6">
+      {/* Header */}
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">Notifications</h1>
+          <p className="mt-1 text-sm text-gray-700/80 dark:text-gray-400">Stay updated with alerts and messages from BOS Law Firm</p>
+        </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className="mb-6 rounded-lg border bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <div className="relative flex w-full items-center">
+          <input
+            type="text"
+            placeholder="Search notifications..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-12 w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 text-base text-gray-700 placeholder-gray-500 shadow-sm focus:border-blue-800 focus:ring-2 focus:ring-blue-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:placeholder-slate-400"
+          />
+          <Search
+            className="absolute left-3 text-gray-400 dark:text-gray-500"
+            size={20}
+          />
+        </div>
+      </div>
+
+      {/* Notifications List */}
+      <div className="rounded-lg border bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        {/* Select All + Bulk Actions */}
+        <div className="mb-4 flex flex-col items-start gap-3">
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  setSelectedNotifications(notifications.map((n) => n.notification_id));
+                } else {
+                  setSelectedNotifications([]);
+                }
+              }}
+              className="h-5 w-5 cursor-pointer accent-[#1e3a8a]"
+            />
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {selectedNotifications.length > 0 ? `${selectedNotifications.length} selected` : "Select All"}
+            </label>
           </div>
-          <button
-            onClick={() => navigate("/notifications/notif-settings")}
-            className="text-blue-700 hover:text-blue-900"
-          >
-            <Settings size={24} />
-          </button>
-        </div>
 
-        {/* Action buttons */}
-        <div className="mb-4 flex justify-end gap-2">
-          <button
-            onClick={markAllAsRead}
-            className="rounded bg-gray-200 px-3 py-1 text-sm text-gray-800 hover:bg-gray-300 dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600"
-          >
-            Mark all as read
-          </button>
-          <button
-            onClick={clearAll}
-            className="rounded bg-gray-200 px-3 py-1 text-sm text-gray-800 hover:bg-gray-300 dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600"
-          >
-            Clear All
-          </button>
-        </div>
-
-        {/* Notifications list */}
-        {paginatedNotifications.length > 0 ? (
-          paginatedNotifications.map((note) => (
-            <div
-              key={note.notification_id}
-              className={`mb-3 flex w-full items-start gap-3 rounded-xl border p-4 ${note.is_read ? "bg-gray-100 dark:bg-slate-700" : "bg-white dark:bg-slate-800"
-                } border-gray-200 dark:border-slate-700`}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleSelectedReadStatus}
+              disabled={selectedNotifications.length === 0}
+              title={allSelectedAreRead ? "Mark as Unread" : "Mark as Read"}
+              className={`flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium transition ${selectedNotifications.length === 0
+                ? "cursor-not-allowed opacity-50 dark:text-gray-500"
+                : "border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-slate-600 dark:text-blue-400 dark:hover:bg-slate-700"
+                }`}
             >
-              <input
-                type="checkbox"
-                unChecked={note.is_read}
-                className="mt-1"
-              />
-              <div>
-                <p
-                  className={`text-sm ${note.is_read ? "font-normal text-gray-600 dark:text-slate-300" : "font-bold text-gray-800 dark:text-white"
+              {allSelectedAreRead ? <MailOpen size={16} /> : <Mail size={16} />}
+              {allSelectedAreRead ? "Mark as Unread" : "Mark as Read"}
+            </button>
+
+            <button
+              onClick={clearAll}
+              className="flex items-center gap-2 rounded-md border border-red-300 px-3 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-100 dark:border-slate-600 dark:hover:bg-slate-700"
+            >
+              <Trash2 size={16} /> Clear All
+            </button>
+          </div>
+        </div>
+
+        {/* Notifications */}
+        {filteredNotifications.length > 0 ? (
+          <div className="space-y-3">
+            {filteredNotifications.map((note) => {
+              const isSelected = selectedNotifications.includes(note.notification_id);
+              return (
+                <div
+                  key={note.notification_id}
+                  onClick={() => setSelectedNotification(note)}
+                  className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-all hover:scale-[1.01] hover:bg-blue-50 dark:hover:bg-blue-900 ${isSelected
+                    ? "border-blue-700 bg-blue-100/60 dark:bg-blue-900/40"
+                    : note.is_read
+                      ? "border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-800"
+                      : "bg-blue-50 dark:bg-slate-700"
                     }`}
                 >
-                  {note.notification_message}
-                </p>
-                <span className="text-xs text-gray-400">
-                  {timeAgo(note.date_created)}
-                </span>
-              </div>
-            </div>
-          ))
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setSelectedNotifications((prev) =>
+                        checked ? [...prev, note.notification_id] : prev.filter((id) => id !== note.notification_id),
+                      );
+                    }}
+                    className="mt-1 h-5 w-5 cursor-pointer accent-[#1e3a8a]"
+                  />
+
+                  {/* Message + Timestamp */}
+                  <div className="flex flex-1 items-start justify-between">
+                    <div>
+                      <p
+                        className={`text-sm ${note.is_read
+                          ? "text-gray-900 dark:text-slate-300"
+                          : "font-semibold text-[#1e3a8a] dark:text-white"
+                          }`}
+                      >
+                        {note.notification_message}
+                      </p>
+                    </div>
+                    <div className="ml-4 flex-shrink-0 text-right">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {new Date(note.date_created).toLocaleString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                          hour12: true,
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         ) : (
-          <p className="text-sm text-gray-500 dark:text-slate-400">No notifications found</p>
+          <div className="py-6 text-center text-gray-500 dark:text-gray-400">No notifications available</div>
         )}
-
-        {/* Footer with pagination */}
-        <div className="mt-6 flex flex-col items-center justify-between gap-2 text-xs text-gray-500 dark:text-gray-400 sm:flex-row">
-          <span>
-            Showing {paginatedNotifications.length} of {notifications.length} notifications
-          </span>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="mt-2 flex items-center justify-end gap-3 p-2 sm:mt-0">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                disabled={currentPage === 1}
-                className={`rounded border px-3 py-1 ${currentPage === 1
-                  ? "cursor-not-allowed bg-gray-200 text-gray-400"
-                  : "bg-white hover:bg-gray-100 dark:bg-slate-800 dark:hover:bg-slate-700"
-                  }`}
-              >
-                &lt;
-              </button>
-
-              <span className="text-sm text-gray-700 dark:text-white">
-                Page {currentPage} of {totalPages}
-              </span>
-
-              <button
-                onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className={`rounded border px-3 py-1 ${currentPage === totalPages
-                  ? "cursor-not-allowed bg-gray-200 text-gray-400"
-                  : "bg-white hover:bg-gray-100 dark:bg-slate-800 dark:hover:bg-slate-700"
-                  }`}
-              >
-                &gt;
-              </button>
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );

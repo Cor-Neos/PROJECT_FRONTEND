@@ -157,7 +157,12 @@ const AddUser = ({ onClose }) => {
                     </div>
 
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div className="relative">
+                        {/* First Name */}
+                        <div className="flex flex-col relative">
+                            <label className="mb-1 font-medium text-gray-700 dark:text-gray-200">
+                            First Name <span className="text-red-500">*</span>
+                            </label>
+                            <div className="relative">
                             <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-300" />
                             <input
                                 type="text"
@@ -167,17 +172,29 @@ const AddUser = ({ onClose }) => {
                                 className="w-full rounded-md border border-gray-300 px-4 py-2 pl-10 text-black focus:outline-none focus:ring-1 focus:ring-blue-400 dark:bg-transparent dark:text-white"
                                 required
                             />
+                            </div>
                         </div>
 
-                        <input
+                        {/* Middle Name */}
+                        <div className="flex flex-col relative">
+                            <label className="mb-1 font-medium text-gray-700 dark:text-gray-200">
+                            Middle Name (optional)
+                            </label>
+                            <input
                             type="text"
                             value={user_mname}
                             onChange={(e) => setMName(e.target.value)}
                             placeholder="Middle Name (optional)"
                             className="w-full rounded-md border border-gray-300 px-4 py-2 text-black focus:outline-none focus:ring-1 focus:ring-blue-400 dark:bg-transparent dark:text-white"
-                        />
+                            />
+                        </div>
 
-                        <div className="relative">
+                        {/* Last Name */}
+                        <div className="flex flex-col relative">
+                            <label className="mb-1 font-medium text-gray-700 dark:text-gray-200">
+                            Last Name <span className="text-red-500">*</span>
+                            </label>
+                            <div className="relative">
                             <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-300" />
                             <input
                                 type="text"
@@ -187,9 +204,15 @@ const AddUser = ({ onClose }) => {
                                 className="w-full rounded-md border border-gray-300 px-4 py-2 pl-10 text-black focus:outline-none focus:ring-1 focus:ring-blue-400 dark:bg-transparent dark:text-white"
                                 required
                             />
+                            </div>
                         </div>
 
-                        <div className="relative">
+                        {/* Email */}
+                        <div className="flex flex-col relative">
+                            <label className="mb-1 font-medium text-gray-700 dark:text-gray-200">
+                            Email <span className="text-red-500">*</span>
+                            </label>
+                            <div className="relative">
                             <Mail className="absolute left-3 top-2.5 h-5 w-5 text-gray-300" />
                             <input
                                 type="email"
@@ -199,9 +222,15 @@ const AddUser = ({ onClose }) => {
                                 className="w-full rounded-md border border-gray-300 px-4 py-2 pl-10 text-black focus:outline-none focus:ring-1 focus:ring-blue-400 dark:bg-transparent dark:text-white"
                                 required
                             />
+                            </div>
                         </div>
 
-                        <div className="relative">
+                        {/* Password */}
+                        <div className="flex flex-col relative">
+                            <label className="mb-1 font-medium text-gray-700 dark:text-gray-200">
+                            Password <span className="text-red-500">*</span>
+                            </label>
+                            <div className="relative">
                             <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-300" />
                             <input
                                 type={showPassword ? "text" : "password"}
@@ -217,9 +246,15 @@ const AddUser = ({ onClose }) => {
                             >
                                 {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                             </div>
+                            </div>
                         </div>
 
-                        <div className="relative">
+                        {/* Phone Number */}
+                        <div className="flex flex-col relative">
+                            <label className="mb-1 font-medium text-gray-700 dark:text-gray-200">
+                            Phone Number <span className="text-red-500">*</span>
+                            </label>
+                            <div className="relative">
                             <Phone className="absolute left-3 top-2.5 h-5 w-5 text-gray-300" />
                             <input
                                 type="text"
@@ -228,9 +263,15 @@ const AddUser = ({ onClose }) => {
                                 placeholder="Phone Number"
                                 className="w-full rounded-md border border-gray-300 px-4 py-2 pl-10 text-black focus:outline-none focus:ring-1 focus:ring-blue-400 dark:bg-transparent dark:text-white"
                             />
+                            </div>
                         </div>
 
-                        <div className="relative">
+                        {/* Role */}
+                        <div className="flex flex-col relative">
+                            <label className="mb-1 font-medium text-gray-700 dark:text-gray-200">
+                            Role <span className="text-red-500">*</span>
+                            </label>
+                            <div className="relative">
                             <Briefcase className="absolute left-3 top-2.5 h-5 w-5 text-gray-300" />
                             <select
                                 value={user_role}
@@ -238,66 +279,43 @@ const AddUser = ({ onClose }) => {
                                 className="w-full rounded-md border border-gray-300 px-4 py-2 pl-10 text-black focus:outline-none focus:ring-1 focus:ring-blue-400 dark:bg-transparent dark:text-white"
                                 required
                             >
-                                <option
-                                    value=""
-                                    disabled
-                                    className="dark:bg-slate-800 dark:text-white"
-                                >
-                                    Select Role
+                                <option value="" disabled className="dark:bg-slate-800 dark:text-white">
+                                Select Role
                                 </option>
-                                <option
-                                    value="Paralegal"
-                                    className="dark:bg-slate-800 dark:text-white"
-                                >
-                                    Paralegal
-                                </option>
-                                <option
-                                    value="Staff"
-                                    className="dark:bg-slate-800 dark:text-white"
-                                >
-                                    Staff
-                                </option>
-                                <option
-                                    value="Lawyer"
-                                    className="dark:bg-slate-800 dark:text-white"
-                                >
-                                    Lawyer
-                                </option>
-                                <option
-                                    value="Admin"
-                                    className="dark:bg-slate-800 dark:text-white"
-                                >
-                                    Super Lawyer
-                                </option>
+                                <option value="Paralegal" className="dark:bg-slate-800 dark:text-white">Paralegal</option>
+                                <option value="Staff" className="dark:bg-slate-800 dark:text-white">Staff</option>
+                                <option value="Lawyer" className="dark:bg-slate-800 dark:text-white">Lawyer</option>
+                                <option value="Admin" className="dark:bg-slate-800 dark:text-white">Super Lawyer</option>
                             </select>
+                            </div>
                         </div>
 
-                        <div className="relative">
+                        {/* Branch */}
+                        <div className="flex flex-col relative">
+                            <label className="mb-1 font-medium text-gray-700 dark:text-gray-200">
+                            Branch <span className="text-red-500">*</span>
+                            </label>
                             <select
-                                value={branch_id}
-                                onChange={(e) => setBranchId(e.target.value)}
-                                className="w-full rounded-md border border-gray-300 px-4 py-2 text-black focus:outline-none focus:ring-1 focus:ring-blue-400 dark:bg-transparent dark:text-white"
-                                required
+                            value={branch_id}
+                            onChange={(e) => setBranchId(e.target.value)}
+                            className="w-full rounded-md border border-gray-300 px-4 py-2 text-black focus:outline-none focus:ring-1 focus:ring-blue-400 dark:bg-transparent dark:text-white"
+                            required
                             >
+                            <option value="" disabled className="dark:bg-slate-800 dark:text-white">
+                                Select Branch
+                            </option>
+                            {branches.map((branch) => (
                                 <option
-                                    value=""
-                                    disabled
-                                    className="dark:bg-slate-800 dark:text-white"
+                                key={branch.branch_id}
+                                value={branch.branch_id}
+                                className="dark:bg-slate-800 dark:text-white"
                                 >
-                                    Select Branch
+                                {branch.branch_name}
                                 </option>
-                                {branches.map((branch) => (
-                                    <option
-                                        key={branch.branch_id}
-                                        value={branch.branch_id}
-                                        className="dark:bg-slate-800 dark:text-white"
-                                    >
-                                        {branch.branch_name}
-                                    </option>
-                                ))}
+                            ))}
                             </select>
                         </div>
-                    </div>
+                        </div>
 
                     <div className="flex justify-end gap-2 pt-4">
                         <button

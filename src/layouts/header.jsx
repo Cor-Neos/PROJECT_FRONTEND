@@ -61,6 +61,27 @@ export const Header = ({ collapsed, setCollapsed }) => {
             }));
     };
 
+    // fetch notification unread count
+    const fetchUnreadCount = async () => {
+        try {
+            const res = await fetch(`http://localhost:3000/api/notifications/unread-count/${user.user_id}`, {
+                credentials: "include",
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setUnreadCount(data.count || 0);
+            }
+        } catch (e) {
+            console.error("Failed to count unread notification/s", e);
+            setUnreadCount(0);
+        }
+    };
+
+    const [unreadCount, setUnreadCount] = useState(0);
+    useEffect(() => {
+        fetchUnreadCount();
+    }, []);
+
     // Global search across routes and backend entities (cases, clients, documents)
     useEffect(() => {
         let active = true;
@@ -194,14 +215,14 @@ export const Header = ({ collapsed, setCollapsed }) => {
                         onChange={handleSearchChange}
                     />
                     {searchTerm && (
-                        <div className="absolute left-0 top-full mt-2 w-full rounded-md bg-white shadow-lg dark:bg-slate-800 z-50 max-h-80 overflow-auto">
+                        <div className="absolute left-0 top-full z-50 mt-2 max-h-80 w-full overflow-auto rounded-md bg-white shadow-lg dark:bg-slate-800">
                             {searchLoading ? (
                                 <div className="px-4 py-3 text-sm text-slate-500">Searching...</div>
                             ) : searchResults.length > 0 ? (
                                 searchResults.map((r) => (
                                     <div
                                         key={r.key}
-                                        className="px-4 py-2 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900 flex items-center justify-between"
+                                        className="flex cursor-pointer items-center justify-between px-4 py-2 hover:bg-blue-100 dark:hover:bg-blue-900"
                                         onClick={() => onSelectResult(r)}
                                     >
                                         <span className="truncate">{r.label}</span>
@@ -235,14 +256,18 @@ export const Header = ({ collapsed, setCollapsed }) => {
 
                 <button
                     onClick={() => navigate("notifications")}
-                    className="btn-ghost size-10"
+                    className="btn-ghost relative size-10"
                 >
                     <Bell size={20} />
+                    {unreadCount > 0 && (
+                        <span className="absolute -right-[-4px] -top-[-2px] inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
+                            {unreadCount > 9 ? "9+" : unreadCount}
+                        </span>
+                    )}
                 </button>
 
                 <button
                     onClick={() => navigate("settings")}
-
                     className="btn-ghost size-10"
                 >
                     <Settings size={20} />

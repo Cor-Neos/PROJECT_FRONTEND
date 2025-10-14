@@ -329,7 +329,7 @@ export const Payments = () => {
                         <h3 className="mb-6 text-xl font-bold text-blue-900 dark:text-slate-200">Add Payment</h3>
                         <div className="grid grid-cols-1 gap-4 text-sm text-blue-900 sm:grid-cols-2">
                             <div>
-                                <label className="font-semibold dark:text-blue-700">Case</label>
+                                <label className="font-semibold dark:text-blue-700">Case <span className="text-red-500">*</span></label>
                                 <select
                                     value={addPayment.case_id}
                                     onChange={(e) => {
@@ -359,7 +359,7 @@ export const Payments = () => {
                                 </select>
                             </div>
                             <div>
-                                <label className="font-semibold dark:text-blue-700">Lawyer</label>
+                                <label className="font-semibold dark:text-blue-700">Lawyer <span className="text-red-500">*</span></label>
                                 <input
                                     type="text"
                                     value={addPayment.user_id}
@@ -370,7 +370,7 @@ export const Payments = () => {
                             </div>
 
                             <div>
-                                <label className="font-semibold dark:text-blue-700">Amount</label>
+                                <label className="font-semibold dark:text-blue-700">Amount <span className="text-red-500">*</span></label>
                                 <input
                                     type="number"
                                     min="0"
@@ -426,7 +426,7 @@ export const Payments = () => {
                             </div>
 
                             <div>
-                                <label className="font-semibold dark:text-blue-700">Payment Type</label>
+                                <label className="font-semibold dark:text-blue-700">Payment Type <span className="text-red-500">*</span></label>
                                 <select
                                     value={addPayment.payment_type}
                                     onChange={(e) => setAddPayment({ ...addPayment, payment_type: e.target.value })}

@@ -10,6 +10,7 @@ const Userlogs = () => {
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
+  const [users, setUsers] = useState([]);
 
   const [visibleCount, setVisibleCount] = useState(5);
 
@@ -48,7 +49,6 @@ const Userlogs = () => {
     if (type === "archive log") return <Archive className="h-5 w-5" />;
     if (type === "task log") return <ListCheck className="h-5 w-5" />;
 
-
     if (/login/.test(action)) return <LogIn className="h-5 w-5" />;
     if (/logout/.test(action)) return <LogOut className="h-5 w-5" />;
     if (/fail|error/.test(action)) return <AlertTriangle className="h-5 w-5 text-red-500" />;
@@ -61,8 +61,8 @@ const Userlogs = () => {
     if (/logout/i.test(action)) return "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300";
     if (/client/i.test(action)) return "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300";
     if (/contact/i.test(action)) return "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300";
-    if (/archived/i.test(action)) return "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200";
-    if (/updated case/i.test(action)) return "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300";
+    if (/archived/i.test(action)) return "bg-slate-700 text-white dark:bg-white dark:text-black";
+    if (/case/i.test(action)) return "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300";
     if (/task/i.test(action)) return "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300";
     if (/fail|error/i.test(action)) return "bg-red-100 text-red-700";
     return "bg-gray-100 text-gray-700 dark:bg-gray-700/20 dark:text-gray-300";
@@ -82,7 +82,7 @@ const Userlogs = () => {
     if (/archived/i.test(action)) return "Case Archived";
     if (/updated case/i.test(action)) return "Case Update";
     if (/task added/i.test(action)) return "New Task Added";
-    if (/task updated/i.test(action)) return "Task Updated";
+    if (/task updated/i.test(action)) return "Task Update";
     if (/fail|error/i.test(action)) return "Error";
     return "Action";
   };
@@ -111,7 +111,7 @@ const Userlogs = () => {
 
       <div className="mb-6 flex flex-col gap-y-1">
         <h2 className="title">Activity Logs</h2>
-        <p className="text-sm dark:text-slate-300">Track and monitor user activities across the platform.</p>
+        <p className="text-sm text-gray-500">Track and monitor user activities across the platform.</p>
       </div>
 
       {/* Filter Section */}

@@ -9,13 +9,6 @@ const AddNewCase = ({ isModalOpen, setIsModalOpen, handleAddCase, newCase, setNe
     const [caseCategoryTypes, setCaseCategoryTypes] = useState([]);
     const [lawyers, setLawyers] = useState([]);
 
-    // Placeholder handler for case action
-    const handleCaseAction = (type) => {
-        console.log(`Case ${type}d:`, newCase);
-        setIsActionModalOpen(false);
-    };
-
-    // Fetching clients here for the dropdown can be implemented later
     useEffect(() => {
         const fetchClientsAndLawyers = async () => {
             try {
@@ -45,7 +38,6 @@ const AddNewCase = ({ isModalOpen, setIsModalOpen, handleAddCase, newCase, setNe
         fetchClientsAndLawyers();
     }, []);
 
-    // Fetching case categories and types here
     useEffect(() => {
         const fetchCaseCategoriesAndTypes = async () => {
             try {
@@ -82,7 +74,6 @@ const AddNewCase = ({ isModalOpen, setIsModalOpen, handleAddCase, newCase, setNe
         }
     }, [newCase.user_id]);
 
-    // Validation for required fields
     const isFormValid = () => {
         return (
             newCase.client_id &&
@@ -105,139 +96,123 @@ const AddNewCase = ({ isModalOpen, setIsModalOpen, handleAddCase, newCase, setNe
                 <h3 className="mb-6 text-xl font-bold text-slate-900 dark:text-slate-50">Add New Case</h3>
 
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+
                     {/* Client Dropdown */}
                     <div>
-                        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Client</label>
+                        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Client <span className="text-red-500">*</span>
+                        </label>
                         <select
                             value={newCase.client_id}
                             onChange={(e) => setNewCase({ ...newCase, client_id: e.target.value })}
                             className="w-full rounded-lg border px-3 py-2 dark:border-gray-600 dark:bg-slate-700 dark:text-white"
                         >
-                            <option
-                                value=""
-                                disabled
-                            >
+                            <option value="" disabled>
                                 Select Client
                             </option>
                             {clients.map((client) => (
-                                <option
-                                    key={client.client_id}
-                                    value={client.client_id}
-                                >
+                                <option key={client.client_id} value={client.client_id}>
                                     {client.client_fullname}
                                 </option>
                             ))}
                         </select>
                     </div>
 
-                    {/* Case CATEGORY ID */}
+                    {/* Case Category */}
                     <div>
-                        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
+                        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Category <span className="text-red-500">*</span>
+                        </label>
                         <select
                             value={newCase.cc_id}
                             onChange={(e) => {
                                 const selectedCcId = e.target.value;
-                                setNewCase({ ...newCase, cc_id: selectedCcId, ct_id: "" }); // reset ct_id when category changes
+                                setNewCase({ ...newCase, cc_id: selectedCcId, ct_id: "" });
                             }}
                             className="w-full rounded-lg border px-3 py-2 dark:border-gray-600 dark:bg-slate-700 dark:text-white"
                         >
-                            <option
-                                value=""
-                                disabled
-                            >
+                            <option value="" disabled>
                                 Select Category
                             </option>
                             {caseCategories.map((category) => (
-                                <option
-                                    key={category.cc_id}
-                                    value={category.cc_id}
-                                >
+                                <option key={category.cc_id} value={category.cc_id}>
                                     {category.cc_name}
                                 </option>
                             ))}
                         </select>
                     </div>
 
-                    {/* Case TYPE (filtered by cc_id) */}
+                    {/* Case Type */}
                     <div>
-                        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Case Type (Case Name)</label>
+                        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Case Type (Case Name) <span className="text-red-500">*</span>
+                        </label>
                         <select
                             value={newCase.ct_id}
                             onChange={(e) => setNewCase({ ...newCase, ct_id: e.target.value })}
                             className="w-full rounded-lg border px-3 py-2 dark:border-gray-600 dark:bg-slate-700 dark:text-white"
-                            disabled={!newCase.cc_id} // disable until a category is selected
+                            disabled={!newCase.cc_id}
                         >
-                            <option
-                                value=""
-                                disabled
-                            >
+                            <option value="" disabled>
                                 {newCase.cc_id ? "Select Case Type" : "Select Category first"}
                             </option>
                             {caseCategoryTypes
-                                .filter((type) => type.cc_id === parseInt(newCase.cc_id)) // filter types by category id
+                                .filter((type) => type.cc_id === parseInt(newCase.cc_id))
                                 .map((type) => (
-                                    <option
-                                        key={type.ct_id}
-                                        value={type.ct_id}
-                                    >
+                                    <option key={type.ct_id} value={type.ct_id}>
                                         {type.ct_name}
                                     </option>
                                 ))}
                         </select>
                     </div>
 
-                    {/* Assign To Lawyers Dropdown */}
+                    {/* Assign To */}
                     <div>
-                        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Assign To</label>
+                        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Assign To  <span className="text-red-500">*</span>
+                        </label>
                         <select
                             value={newCase.user_id}
                             onChange={(e) => setNewCase({ ...newCase, user_id: e.target.value })}
                             className="w-full rounded-lg border px-3 py-2 dark:border-gray-600 dark:bg-slate-700 dark:text-white"
-                            disabled={user.user_role !== "Admin" || !newCase.cc_id} // disabled if not Admin or no case category
+                            disabled={user.user_role !== "Admin" || !newCase.cc_id}
                         >
-                            <option
-                                value=""
-                                disabled
-                            >
+                            <option value="" disabled>
                                 {user.user_role !== "Admin"
                                     ? `${user.user_fname} ${user.user_mname} ${user.user_lname}`
                                     : !newCase.cc_id
                                         ? "Select Category first"
                                         : "Select Lawyer"}
                             </option>
-
-                            {user.user_role === "Admin" ? (
-                                lawyers
-                                    .filter((lawyer) => lawyer.cc_id === parseInt(newCase.cc_id)) // filter lawyers by category
-                                    .map((lawyer) => (
-                                        <option
-                                            key={lawyer.user_id}
-                                            value={lawyer.user_id}
-                                        >
-                                            {lawyer.user_fname} {lawyer.user_mname} {lawyer.user_lname}
-                                        </option>
-                                    ))
-                            ) : (
-                                <option value={newCase.user_id}>
-                                    {user.user_fname} {user.user_mname} {user.user_lname}
-                                </option>
-                            )}
+                            {user.user_role === "Admin"
+                                ? lawyers
+                                      .filter((lawyer) => lawyer.cc_id === parseInt(newCase.cc_id))
+                                      .map((lawyer) => (
+                                          <option key={lawyer.user_id} value={lawyer.user_id}>
+                                              {lawyer.user_fname} {lawyer.user_mname} {lawyer.user_lname}
+                                          </option>
+                                      ))
+                                : (
+                                    <option value={newCase.user_id}>
+                                        {user.user_fname} {user.user_mname} {user.user_lname}
+                                    </option>
+                                )}
                         </select>
                     </div>
 
                     {/* Fee */}
                     <div>
-                        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Fee</label>
+                        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Fee <span className="text-red-500">*</span>
+                        </label>
                         <input
                             type="number"
                             value={newCase.case_fee}
                             onChange={(e) => setNewCase({ ...newCase, case_fee: e.target.value })}
                             onBlur={() => {
-                                // On blur, if fee is empty or less than 0, set to 0.00
                                 if (!newCase.case_fee || parseFloat(newCase.case_fee) < 0) {
                                     setNewCase((prev) => ({ ...prev, case_fee: "0.00" }));
                                 } else {
-                                    // Format to two decimal places
                                     const formattedFee = parseFloat(newCase.case_fee).toFixed(2);
                                     setNewCase((prev) => ({ ...prev, case_fee: formattedFee }));
                                 }
@@ -255,7 +230,9 @@ const AddNewCase = ({ isModalOpen, setIsModalOpen, handleAddCase, newCase, setNe
 
                     {/* Case Status */}
                     <div>
-                        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Case Status</label>
+                        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Case Status <span className="text-red-500">*</span>
+                        </label>
                         <input
                             type="text"
                             value={newCase.case_status}
@@ -266,7 +243,9 @@ const AddNewCase = ({ isModalOpen, setIsModalOpen, handleAddCase, newCase, setNe
 
                     {/* Remarks */}
                     <div className="md:col-span-2">
-                        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Remarks / Description </label>
+                        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Remarks / Description <span className="text-red-500">*</span>
+                        </label>
                         <textarea
                             value={newCase.case_remarks}
                             onChange={(e) => setNewCase({ ...newCase, case_remarks: e.target.value })}
@@ -278,7 +257,9 @@ const AddNewCase = ({ isModalOpen, setIsModalOpen, handleAddCase, newCase, setNe
 
                     {/* Cabinet */}
                     <div>
-                        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Cabinet</label>
+                        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Cabinet <span className="text-red-500">*</span>
+                        </label>
                         <input
                             type="number"
                             value={newCase.case_cabinet}
@@ -327,7 +308,6 @@ const AddNewCase = ({ isModalOpen, setIsModalOpen, handleAddCase, newCase, setNe
             </div>
         </div>
     );
-
 };
 
 export default AddNewCase;

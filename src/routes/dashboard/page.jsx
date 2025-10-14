@@ -12,9 +12,12 @@ const DashboardPage = () => {
     const { user } = useAuth();
     const [userLogs, setUserLogs] = useState([]);
     const [userCount, setUserCount] = useState(0);
-    const [clientsCount, setClientsCount] = useState(0);
+    const [clientCount, setClientCount] = useState(0);
     const [processingCasesCount, setProcessingCasesCount] = useState(0);
     const [archivedCasesCount, setArchivedCasesCount] = useState(0);
+    const [documentsForApprovalCount, setDocumentsForApprovalCount] = useState(0);
+    const [processingDocumentsCount, setProcessingDocumentsCount] = useState(0);
+    const [pendingTasksCount, setPendingTasksCount] = useState(0);
 
     // fetching user count
     useEffect(() => {
@@ -37,30 +40,23 @@ const DashboardPage = () => {
         }
     }, [user]);
 
-    // fetching client count (role-based)
+    // fetching client count
     useEffect(() => {
-        const fetchClientsCount = async () => {
+        const fetchClientCount = async () => {
             try {
-                const endpoint =
-                    user?.user_role === "Admin" || user?.user_role === "Staff"
-                        ? "http://localhost:3000/api/clients/count"
-                        : `http://localhost:3000/api/clients/count/user/${user.user_id}`;
-
-                const res = await fetch(endpoint, {
+                const res = await fetch("http://localhost:3000/api/clients/count", {
                     method: "GET",
                     credentials: "include",
                 });
-                if (!res.ok) throw new Error("Failed to fetch clients count");
+                if (!res.ok) throw new Error("Failed to fetch client count");
                 const data = await res.json();
-                setClientsCount(data.count ?? 0);
+                setClientCount(data.count);
             } catch (error) {
-                console.error("Failed to fetch clients count:", error);
-                setClientsCount(0);
+                console.error("Failed to fetch client count:", error);
             }
         };
-
         if (user) {
-            fetchClientsCount();
+            fetchClientCount();
         }
     }, [user]);
 
@@ -116,6 +112,54 @@ const DashboardPage = () => {
         }
     }, [user]);
 
+    // Fetch all document-related counts
+    useEffect(() => {
+        const fetchAllDocumentCounts = async () => {
+            try {
+                const endpoints = [
+                    {
+                        url: "http://localhost:3000/api/documents/count/for-approval",
+                        setter: setDocumentsForApprovalCount,
+                    },
+                    {
+                        url: "http://localhost:3000/api/documents/count/processing",
+                        setter: setProcessingDocumentsCount,
+                    },
+                    {
+                        url: "http://localhost:3000/api/documents/count/pending-tasks",
+                        setter: setPendingTasksCount,
+                    },
+                ];
+
+                // Fetch all counts in parallel
+                const results = await Promise.all(
+                    endpoints.map(async ({ url, setter }) => {
+                        try {
+                            const res = await fetch(url, {
+                                method: "GET",
+                                credentials: "include",
+                            });
+                            if (!res.ok) throw new Error(`Failed to fetch: ${url}`);
+                            const data = await res.json();
+                            setter(data.count ?? 0);
+                        } catch (error) {
+                            console.error(`Error fetching from ${url}:`, error);
+                            setter(0);
+                        }
+                    }),
+                );
+
+                return results;
+            } catch (error) {
+                console.error("Error fetching document counts:", error);
+            }
+        };
+
+        if (user) {
+            fetchAllDocumentCounts();
+        }
+    }, [user]);
+
     // fetching user logs
     useEffect(() => {
         const fetchUserLogs = async () => {
@@ -155,7 +199,7 @@ const DashboardPage = () => {
                         <div className="card">
                             <div className="card-header">
                                 <p className="card-title">Users</p>
-                                <div className="bg-glue-500/20 w-fit rounded-lg p-2 text-blue-500 transition-colors dark:bg-blue-600/20 dark:text-blue-600">
+                                <div className="w-fit rounded-lg bg-blue-500/20 p-2 text-blue-500 transition-colors dark:bg-blue-600/20 dark:text-blue-600">
                                     <ShieldUser size={26} />
                                 </div>
                             </div>
@@ -169,7 +213,7 @@ const DashboardPage = () => {
                     <div className="card">
                         <div className="card-header">
                             <p className="card-title">Archived Cases</p>
-                            <div className="bg-glue-500/20 w-fit rounded-lg p-2 text-blue-500 transition-colors dark:bg-blue-600/20 dark:text-blue-600">
+                            <div className="w-fit rounded-lg bg-blue-500/20 p-2 text-blue-500 transition-colors dark:bg-blue-600/20 dark:text-blue-600">
                                 <Archive size={26} />
                             </div>
                         </div>
@@ -182,7 +226,7 @@ const DashboardPage = () => {
                     <div className="card">
                         <div className="card-header">
                             <p className="card-title">Processing Cases</p>
-                            <div className="bg-glue-500/20 w-fit rounded-lg p-2 text-blue-500 transition-colors dark:bg-blue-600/20 dark:text-blue-600">
+                            <div className="w-fit rounded-lg bg-blue-500/20 p-2 text-blue-500 transition-colors dark:bg-blue-600/20 dark:text-blue-600">
                                 <FolderOpen size={26} />
                             </div>
                         </div>
@@ -195,12 +239,12 @@ const DashboardPage = () => {
                     <div className="card">
                         <div className="card-header">
                             <p className="card-title">Processing Documents</p>
-                            <div className="bg-glue-500/20 w-fit rounded-lg p-2 text-blue-500 transition-colors dark:bg-blue-600/20 dark:text-blue-600">
+                            <div className="w-fit rounded-lg bg-blue-500/20 p-2 text-blue-500 transition-colors dark:bg-blue-600/20 dark:text-blue-600">
                                 <FileMinus size={26} />
                             </div>
                         </div>
                         <div className="card-body bg-slate-100 transition-colors dark:bg-slate-950">
-                            <p className="text-2xl font-bold text-slate-900 transition-colors dark:text-slate-50">21</p>
+                            <p className="text-2xl font-bold text-slate-900 transition-colors dark:text-slate-50">{processingDocumentsCount}</p>
                         </div>
                     </div>
                 </div>
@@ -213,12 +257,12 @@ const DashboardPage = () => {
                     <div className="card">
                         <div className="card-header">
                             <p className="card-title">Clients</p>
-                            <div className="bg-glue-500/20 w-fit rounded-lg p-2 text-blue-500 transition-colors dark:bg-blue-600/20 dark:text-blue-600">
+                            <div className="w-fit rounded-lg bg-blue-500/20 p-2 text-blue-500 transition-colors dark:bg-blue-600/20 dark:text-blue-600">
                                 <Users size={26} />
                             </div>
                         </div>
                         <div className="card-body bg-slate-100 transition-colors dark:bg-slate-950">
-                            <p className="text-2xl font-bold text-slate-900 transition-colors dark:text-slate-50">{clientsCount}</p>
+                            <p className="text-2xl font-bold text-slate-900 transition-colors dark:text-slate-50">{clientCount}</p>
                         </div>
                     </div>
 
@@ -226,12 +270,12 @@ const DashboardPage = () => {
                     <div className="card">
                         <div className="card-header">
                             <p className="card-title">Pending Approvals</p>
-                            <div className="bg-glue-500/20 w-fit rounded-lg p-2 text-blue-500 transition-colors dark:bg-blue-600/20 dark:text-blue-600">
+                            <div className="w-fit rounded-lg bg-blue-500/20 p-2 text-blue-500 transition-colors dark:bg-blue-600/20 dark:text-blue-600">
                                 <UserRoundMinus size={26} />
                             </div>
                         </div>
                         <div className="card-body bg-slate-100 transition-colors dark:bg-slate-950">
-                            <p className="text-2xl font-bold text-slate-900 transition-colors dark:text-slate-50">5</p>
+                            <p className="text-2xl font-bold text-slate-900 transition-colors dark:text-slate-50">{documentsForApprovalCount}</p>
                         </div>
                     </div>
 
@@ -239,12 +283,12 @@ const DashboardPage = () => {
                     <div className="card">
                         <div className="card-header">
                             <p className="card-title">Pending Tasks</p>
-                            <div className="bg-glue-500/20 w-fit rounded-lg p-2 text-blue-500 transition-colors dark:bg-blue-600/20 dark:text-blue-600">
+                            <div className="w-fit rounded-lg bg-blue-500/20 p-2 text-blue-500 transition-colors dark:bg-blue-600/20 dark:text-blue-600">
                                 <ListTodo size={26} />
                             </div>
                         </div>
                         <div className="card-body bg-slate-100 transition-colors dark:bg-slate-950">
-                            <p className="text-2xl font-bold text-slate-900 transition-colors dark:text-slate-50">91</p>
+                            <p className="text-2xl font-bold text-slate-900 transition-colors dark:text-slate-50">{pendingTasksCount}</p>
                         </div>
                     </div>
                 </div>

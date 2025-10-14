@@ -204,7 +204,7 @@ export default function AddTask({ caseId, onClose, onAdded }) {
                     {/* Tasked To */}
                     <div className="flex flex-col relative">
                         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Tasked To
+                            Tasked To <span className="text-red-500">*</span>
                         </label>
                         <div className="relative">
                             <button
@@ -278,7 +278,7 @@ export default function AddTask({ caseId, onClose, onAdded }) {
 
                     {/* Document Name */}
                     <div className="flex flex-col">
-                        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Document Name</label>
+                        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Document Name  <span className="text-red-500">*</span></label>
                         <input
                             name="doc_name"
                             value={form.doc_name}
@@ -292,7 +292,7 @@ export default function AddTask({ caseId, onClose, onAdded }) {
 
                     {/* Priority */}
                     <div className="flex flex-col">
-                        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Priority Level</label>
+                        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Priority Level <span className="text-red-500">*</span></label>
                         <select
                             name="doc_prio_level"
                             value={form.doc_prio_level}
@@ -314,7 +314,7 @@ export default function AddTask({ caseId, onClose, onAdded }) {
 
                     {/* Due Date */}
                     <div className="flex flex-col">
-                        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Due Date</label>
+                        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Due Date <span className="text-red-500">*</span></label>
                         <input
                             name="doc_due_date"
                             value={form.doc_due_date ? form.doc_due_date.slice(0, 10) : ""}
@@ -327,7 +327,7 @@ export default function AddTask({ caseId, onClose, onAdded }) {
 
                     {/* Tag */}
                     <div className="flex flex-col">
-                        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Tag</label>
+                        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Tag <span className="text-red-500">*</span></label>
                         <input
                             name="doc_tag"
                             value={form.doc_tag}
@@ -354,7 +354,7 @@ export default function AddTask({ caseId, onClose, onAdded }) {
 
                 {/* Description & Task */}
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div className="flex flex-col">
+                    {/* <div className="flex flex-col">
                         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
                         <textarea
                             name="doc_description"
@@ -364,17 +364,17 @@ export default function AddTask({ caseId, onClose, onAdded }) {
                             placeholder="Short description"
                             className="rounded border px-3 py-2 dark:border-gray-600 dark:bg-slate-800 dark:text-white"
                         />
-                    </div>
+                    </div> */}
 
-                    <div className="flex flex-col">
-                        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Task</label>
+                    <div className="md:col-span-2">
+                        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Task Description  <span className="text-red-500">*</span></label>
                         <textarea
                             name="doc_task"
                             value={form.doc_task}
                             onChange={onChange}
                             rows={3}
                             placeholder="Detailed task instructions"
-                            className="rounded border px-3 py-2 dark:border-gray-600 dark:bg-slate-800 dark:text-white"
+                            className="w-full resize-none rounded-lg border px-3 py-2 dark:border-gray-600 dark:bg-slate-700 dark:text-white"
                             required
                         />
                     </div>
@@ -429,57 +429,66 @@ export default function AddTask({ caseId, onClose, onAdded }) {
             </form>
 
             {/* Existing Documents */}
-            <div className="mt-6 overflow-x-auto">
-                <h3 className="mb-2 text-sm font-medium text-gray-900 dark:text-gray-100">Existing Documents</h3>
+            <div className="mt-6">
+                <h3 className="mb-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                    Existing Documents
+                </h3>
+
                 {loadingDocs ? (
                     <p className="text-sm text-gray-500 dark:text-gray-400">Loading...</p>
                 ) : docs.length === 0 ? (
                     <p className="text-sm text-gray-500 dark:text-gray-400">No documents found.</p>
                 ) : (
-                    <table className="min-w-full border text-sm dark:border-gray-600">
-                        <thead className="bg-gray-50 dark:bg-slate-800">
-                            <tr>
-                                <th className="border p-2 text-left dark:border-gray-600 dark:text-gray-300">Name</th>
-                                <th className="border p-2 text-left dark:border-gray-600 dark:text-gray-300">Type</th>
-                                <th className="border p-2 text-left dark:border-gray-600 dark:text-gray-300">Priority</th>
-                                <th className="border p-2 text-left dark:border-gray-600 dark:text-gray-300">Due</th>
-                                <th className="border p-2 text-left dark:border-gray-600 dark:text-gray-300">Tag</th>
-                                <th className="border p-2 text-left dark:border-gray-600 dark:text-gray-300">File</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {docs.map((d) => (
-                                <tr
-                                    key={d.doc_id}
-                                    className="odd:bg-white even:bg-gray-50 dark:odd:bg-slate-900 dark:even:bg-slate-800"
-                                >
-                                    <td className="border p-2 dark:border-gray-600 dark:text-gray-200">{d.doc_name}</td>
-                                    <td className="border p-2 dark:border-gray-600 dark:text-gray-200">{d.doc_type}</td>
-                                    <td className="border p-2 dark:border-gray-600 dark:text-gray-200">{d.doc_prio_level || "-"}</td>
-                                    <td className="border p-2 dark:border-gray-600 dark:text-gray-200">
-                                        {d.doc_due_date ? new Date(d.doc_due_date).toLocaleDateString() : "-"}
-                                    </td>
-                                    <td className="border p-2 dark:border-gray-600 dark:text-gray-200">{d.doc_tag || "-"}</td>
-                                    <td className="border p-2 dark:border-gray-600 dark:text-gray-200">
-                                        {d.doc_file ? (
-                                            <a
-                                                className="text-blue-600 hover:underline"
-                                                href={`http://localhost:3000/uploads/${d.doc_type === "Task" ? "taskDocs" : "supportingDocs"}/${d.doc_file}`}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                            >
-                                                View
-                                            </a>
-                                        ) : (
-                                            "-"
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                    <div className="overflow-x-auto rounded-lg border dark:border-gray-700">
+                        {/* Scrollable Table Container */}
+                        <div className="max-h-40 overflow-y-auto">
+                            <table className="min-w-full text-sm border-collapse">
+                                <thead className="sticky top-0 bg-gray-100 dark:bg-slate-800 z-10">
+                                    <tr>
+                                        <th className="border p-2 text-left dark:border-gray-600 dark:text-gray-300">Name</th>
+                                        <th className="border p-2 text-left dark:border-gray-600 dark:text-gray-300">Type</th>
+                                        <th className="border p-2 text-left dark:border-gray-600 dark:text-gray-300">Priority</th>
+                                        <th className="border p-2 text-left dark:border-gray-600 dark:text-gray-300">Due</th>
+                                        <th className="border p-2 text-left dark:border-gray-600 dark:text-gray-300">Tag</th>
+                                        <th className="border p-2 text-left dark:border-gray-600 dark:text-gray-300">File</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {docs.map((d) => (
+                                        <tr
+                                            key={d.doc_id}
+                                            className="odd:bg-white even:bg-gray-50 dark:odd:bg-slate-900 dark:even:bg-slate-800"
+                                        >
+                                            <td className="border p-2 dark:border-gray-600 dark:text-gray-200">{d.doc_name}</td>
+                                            <td className="border p-2 dark:border-gray-600 dark:text-gray-200">{d.doc_type}</td>
+                                            <td className="border p-2 dark:border-gray-600 dark:text-gray-200">{d.doc_prio_level || "-"}</td>
+                                            <td className="border p-2 dark:border-gray-600 dark:text-gray-200">
+                                                {d.doc_due_date ? new Date(d.doc_due_date).toLocaleDateString() : "-"}
+                                            </td>
+                                            <td className="border p-2 dark:border-gray-600 dark:text-gray-200">{d.doc_tag || "-"}</td>
+                                            <td className="border p-2 dark:border-gray-600 dark:text-gray-200">
+                                                {d.doc_file ? (
+                                                    <a
+                                                        className="text-blue-600 hover:underline"
+                                                        href={`http://localhost:3000${d.doc_file}`}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                    >
+                                                        View
+                                                    </a>
+                                                ) : (
+                                                    "-"
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 )}
             </div>
+
         </div>
     );
 }

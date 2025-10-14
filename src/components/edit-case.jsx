@@ -321,7 +321,7 @@ const EditCaseModal = ({ isOpen, onClose, caseData, onUpdate, user }) => {
                         className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
                         onClick={handleSubmit}
                     >
-                        Update Case {user.user_role === "Lawyer" && " & Start Processing"}
+                        Update Case {user.user_role === "Lawyer" && caseData.case_status === "Pending" && " & Start Processing"}
                     </button>
                 </div>
             </div>

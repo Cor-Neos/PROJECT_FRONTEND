@@ -148,7 +148,7 @@ export default function AddDocument({ caseId, onClose, onAdded }) {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               {/* Document Name */}
               <div className="flex flex-col">
-                <label className="mb-1 text-sm font-medium">Document Name</label>
+                <label className="mb-1 text-sm font-medium">Document Name <span className="text-red-500">*</span></label>
                 <input
                   name="doc_name"
                   value={form.doc_name}
@@ -162,7 +162,7 @@ export default function AddDocument({ caseId, onClose, onAdded }) {
 
               {/* Tag */}
               <div className="flex flex-col">
-                <label className="mb-1 text-sm font-medium">Tag</label>
+                <label className="mb-1 text-sm font-medium">Tag <span className="text-red-500">*</span></label>
                 <input
                   name="doc_tag"
                   value={form.doc_tag}
@@ -189,7 +189,7 @@ export default function AddDocument({ caseId, onClose, onAdded }) {
 
             {/* Description */}
             <div className="col-span-2">
-              <label className="mb-1 text-sm font-medium">Description</label>
+              <label className="mb-1 text-sm font-medium">Description <span className="text-red-500">*</span></label>
               <textarea
                 name="doc_description"
                 value={form.doc_description}

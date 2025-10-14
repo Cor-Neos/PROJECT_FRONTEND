@@ -4,10 +4,10 @@ import Column from "@/components/tasking/column";
 import { DndContext } from "@dnd-kit/core";
 import toast from "react-hot-toast";
 
-export const Tasking = () => {
+export const Tasks = () => {
     const [tasks, setTasks] = useState([]);
 
-    // Fetch tasks 
+    // Fetch tasks
     useEffect(() => {
         const fetchTasks = async () => {
             try {
@@ -28,7 +28,6 @@ export const Tasking = () => {
 
         fetchTasks();
     }, []);
-
 
     // Handle drag end event to update task status
     function handleDragEnd(event) {
@@ -117,31 +116,28 @@ export const Tasking = () => {
     };
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-5">
             {/* Header */}
             <div>
                 <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Tasks</h1>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Monitor and update tasks with our intuitive drag-and-drop interface.
-                </p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Monitor and update tasks with our intuitive drag-and-drop interface.</p>
             </div>
 
             {/* Priority Legend */}
-            <div>
-                <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
-                    Priority Levels:
-                </h3>
+            <div className="flex items-center gap-6">
+                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Priority Levels:</h3>
                 <div className="flex gap-4">
                     {[
                         { color: "bg-red-500", label: "High" },
-                        { color: "bg-yellow-500", label: "Medium" },
+                        { color: "bg-yellow-500", label: "Mid" },
                         { color: "bg-blue-500", label: "Low" },
                     ].map((p) => (
-                        <div key={p.label} className="flex items-center gap-2">
+                        <div
+                            key={p.label}
+                            className="flex items-center gap-2"
+                        >
                             <div className={`h-4 w-4 rounded-full ${p.color}`}></div>
-                            <span className="text-sm text-slate-600 dark:text-slate-400">
-                                {p.label}
-                            </span>
+                            <span className="text-sm text-slate-600 dark:text-slate-400">{p.label}</span>
                         </div>
                     ))}
                 </div>
@@ -161,98 +157,130 @@ export const Tasking = () => {
                 </div>
             </DndContext>
 
-            {/* Table Section */}
+            {/* List of Overdue Tasks */}
             <div className="mt-10">
-                <h1 className="mb-3 text-lg font-bold text-slate-800 dark:text-slate-100">
-                    Task Overview
-                </h1>
-
-                <div className="overflow-x-auto rounded-xl border border-blue-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-800">
-                    {/* Make table vertically scrollable with sticky header */}
-                    <div className="max-h-[70vh] overflow-y-auto">
-                        <table className="min-w-[920px] w-full table-fixed text-sm">
+                <h1 className="mb-3 text-lg font-bold text-slate-800 dark:text-slate-100">Overdue Tasks</h1>
+                <div className="overflow-x-auto rounded-xl bg-white shadow-xl dark:border-slate-700 dark:bg-slate-800">
+                    <div className="max-h-[40vh] overflow-y-auto">
+                        <table className="w-full table-auto text-sm">
                             <thead className="sticky top-0 z-20 bg-gray-100 dark:bg-slate-900/40">
                                 <tr>
-                                    <th
-                                        scope="col"
-                                        className="w-[28%] px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300"
-                                    >
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600 dark:text-slate-300">
                                         Task Name
                                     </th>
-                                    <th
-                                        scope="col"
-                                        className="w-[42%] px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300"
-                                    >
-                                        Description
-                                    </th>
-                                    <th
-                                        scope="col"
-                                        className="w-[18%] px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300"
-                                    >
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600 dark:text-slate-300">
                                         Due Date
                                     </th>
-                                    <th
-                                        scope="col"
-                                        className="w-[12%] px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300"
-                                    >
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600 dark:text-slate-300">
+                                        Status
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="dark:divide-slate-700">
+                                {tasks.filter(task => task.doc_due_date && new Date(task.doc_due_date) < new Date() && task.doc_status !== STATUS_IDS.DONE).length > 0 ? (
+                                    tasks
+                                        .filter(task => task.doc_due_date && new Date(task.doc_due_date) < new Date() && task.doc_status !== STATUS_IDS.DONE)
+                                        .map((task) => (
+                                            <tr
+                                                key={task.doc_id}
+                                                className="transition-colors odd:bg-white even:bg-gray-50/60 hover:bg-gray-50 dark:odd:bg-slate-800 dark:even:bg-slate-800/60 dark:hover:bg-slate-700/60"
+                                            >
+                                                <td className="max-w-[180px] truncate px-4 font-medium text-slate-800 dark:text-slate-100">
+                                                    {task.doc_name}
+                                                </td>
+                                                <td className="px-4 py-3 text-slate-700 dark:text-slate-200">
+                                                    {new Date(task.doc_due_date).toLocaleDateString()}
+                                                </td>
+                                                <td className="px-4 py-3 capitalize text-slate-800 dark:text-slate-100">
+                                                    {task.doc_status === "todo" ? "To Do" : task.doc_status === "in_progress" ? "In Progress" : "Done"}
+                                                </td>
+                                            </tr>
+                                        ))
+                                ) : (
+                                    <tr>
+                                        <td
+                                            colSpan="3"
+                                            className="px-5 py-8 text-center text-slate-500 dark:text-slate-400"
+                                        >
+                                            No overdue tasks.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            {/* Task Overview */}
+            <div className="mt-10">
+                <h1 className="mb-3 text-lg font-bold text-slate-800 dark:text-slate-100">Task Overview</h1>
+
+                <div className="overflow-x-auto rounded-xl bg-white shadow-xl dark:border-slate-700 dark:bg-slate-800">
+                    <div className="max-h-[70vh] overflow-y-auto">
+                        <table className="w-full table-auto text-sm">
+                            <thead className="sticky top-0 z-20 bg-gray-100 dark:bg-slate-900/40">
+                                <tr>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600 dark:text-slate-300">
+                                        Task Name
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600 dark:text-slate-300">
+                                        Description
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600 dark:text-slate-300">Status</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600 dark:text-slate-300">
+                                        Due Date
+                                    </th>
+                                    <th className="px-4 py-3 text-center text-xs font-semibold uppercase text-slate-600 dark:text-slate-300">
                                         Actions
                                     </th>
                                 </tr>
                             </thead>
 
-                            <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
+                            <tbody className="dark:divide-slate-700">
                                 {tasks.length > 0 ? (
                                     tasks.map((task) => (
                                         <tr
                                             key={task.doc_id}
-                                            className="odd:bg-white even:bg-gray-50/60 transition-colors hover:bg-gray-50 dark:odd:bg-slate-800 dark:even:bg-slate-800/60 dark:hover:bg-slate-700/60"
+                                            className="transition-colors odd:bg-white even:bg-gray-50/60 hover:bg-gray-50 dark:odd:bg-slate-800 dark:even:bg-slate-800/60 dark:hover:bg-slate-700/60"
                                         >
                                             {/* Task Name */}
-                                            <td className="px-5 py-3 align-middle">
-                                                <span
-                                                    className="block truncate font-medium text-slate-800 dark:text-slate-100"
-                                                    title={task.doc_name}
-                                                >
-                                                    {task.doc_name}
-                                                </span>
+                                            <td className="max-w-[180px] truncate px-4 font-medium text-slate-800 dark:text-slate-100">
+                                                {task.doc_name}
                                             </td>
 
                                             {/* Description */}
-                                            <td className="px-5 py-3 align-middle">
-                                                <p
-                                                    className="truncate text-slate-600 dark:text-slate-300"
-                                                    title={task.doc_description || ""}
-                                                >
-                                                    {task.doc_description || "—"}
-                                                </p>
+                                            <td className="px-4 py-3 leading-relaxed text-slate-600 dark:text-slate-300">
+                                                <div className="line-clamp-3 break-words">{task.doc_task || task.doc_description || "—"}</div>
+                                            </td>
+
+                                            {/* Status */}
+                                            <td className="px-5 py-3 capitalize text-slate-800 dark:text-slate-100">
+                                                {task.doc_status === "todo" ? "To Do" : task.doc_status === "in_progress" ? "In Progress" : "Done"}
                                             </td>
 
                                             {/* Due Date + Priority */}
-                                            <td className="px-5 py-4 whitespace-nowrap">
-                                                <div className="flex items-center gap-2 justify-start">
-                                                    {/* Colored Circle based on Priority */}
+                                            <td className="whitespace-nowrap px-5 py-4">
+                                                <div className="flex items-center gap-2">
                                                     <span className="text-slate-700 dark:text-slate-200">
-                                                        {task.doc_due_date
-                                                            ? new Date(task.doc_due_date).toLocaleDateString()
-                                                            : "No date"}
+                                                        {task.doc_due_date ? new Date(task.doc_due_date).toLocaleDateString() : "No date"}
                                                     </span>
                                                     <span
                                                         className={`inline-block h-2.5 w-2.5 rounded-full ${task.doc_prio_level === "High"
                                                             ? "bg-red-500"
-                                                            : task.doc_prio_level === "Medium"
+                                                            : task.doc_prio_level === "Mid"
                                                                 ? "bg-yellow-500"
                                                                 : task.doc_prio_level === "Low"
                                                                     ? "bg-blue-500"
-                                                                    : "bg-yellow-500"
+                                                                    : "bg-gray-400"
                                                             }`}
                                                     ></span>
                                                 </div>
                                             </td>
 
-
                                             {/* Actions */}
-                                            <td className="px-10 py-2 align-middle text-right">
-                                                <div className="flex justify-end gap-2 whitespace-nowrap">
+                                            <td className="px-4 py-2 text-center">
+                                                <div className="flex flex-wrap justify-center gap-2">
                                                     <button
                                                         onClick={() => updateTaskStatus(task.doc_id, STATUS_IDS.TODO)}
                                                         disabled={task.doc_status === STATUS_IDS.TODO}
@@ -290,7 +318,7 @@ export const Tasking = () => {
                                 ) : (
                                     <tr>
                                         <td
-                                            colSpan="4"
+                                            colSpan="5"
                                             className="px-5 py-8 text-center text-slate-500 dark:text-slate-400"
                                         >
                                             No tasks found.
@@ -306,4 +334,4 @@ export const Tasking = () => {
     );
 };
 
-export default Tasking;
+export default Tasks;
