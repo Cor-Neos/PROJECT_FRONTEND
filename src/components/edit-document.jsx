@@ -4,7 +4,7 @@ import { useAuth } from "@/context/auth-context";
 import toast from "react-hot-toast";
 
 export default function EditDocument({ doc, users = [], onClose, onSaved }) {
-    const { user } = useAuth() || {};
+    const { user } = useAuth();
 
     if (!doc) return null;
 
@@ -46,6 +46,7 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
         doc_type: "Task",
         doc_status: doc.doc_status || "todo",
         case_id: doc.case_id,
+        doc_last_updated_by: user.user_id,
     });
 
     const [supportForm, setSupportForm] = useState({
@@ -55,6 +56,7 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
         doc_password: "",
         doc_type: "Support",
         case_id: doc.case_id,
+        doc_last_updated_by: user.user_id,
     });
 
     const onTaskChange = (e) => {
@@ -83,15 +85,19 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
         const toastId = toast.loading("Saving changes...", { duration: 4000 });
         try {
             const payload = { ...taskForm };
+
             if (!payload.doc_password) delete payload.doc_password;
+
             const res = await fetch(`http://localhost:3000/api/documents/${doc.doc_id}`, {
                 method: "PUT",
                 credentials: "include",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
             });
+
             const data = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(data.error || "Failed to update document");
+
             toast.success("Task document updated", { id: toastId, duration: 3000 });
             if (onSaved) onSaved();
         } catch (err) {
@@ -104,8 +110,10 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
         const toastId = toast.loading("Saving changes...", { duration: 4000 });
         try {
             const payload = { ...supportForm };
+
             if (!payload.doc_password) delete payload.doc_password;
             if (user?.user_id) payload.doc_submitted_by = user.user_id;
+
             const res = await fetch(`http://localhost:3000/api/documents/${doc.doc_id}`, {
                 method: "PUT",
                 credentials: "include",
@@ -114,7 +122,8 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
             });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(data.error || "Failed to update document");
-            toast.success("Document updated", { id: toastId, duration: 3000 });
+
+            toast.success("Document updated", { id: toastId, duration: 4000 });
             if (onSaved) onSaved();
         } catch (err) {
             console.error("Update support document failed", err);
@@ -136,7 +145,10 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
             <div className="relative w-full max-w-3xl rounded-xl bg-white p-6 shadow-xl dark:bg-slate-900">
-                <button className="absolute right-4 top-4 text-gray-500 hover:text-gray-800 dark:hover:text-white" onClick={onClose}>
+                <button
+                    className="absolute right-4 top-4 text-gray-500 hover:text-gray-800 dark:hover:text-white"
+                    onClick={onClose}
+                >
                     <X className="h-6 w-6" />
                 </button>
                 <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">
@@ -144,9 +156,12 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
                 </h2>
 
                 {isTask ? (
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form
+                        onSubmit={handleSubmit}
+                        className="space-y-4"
+                    >
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <div className="flex flex-col relative">
+                            <div className="relative flex flex-col">
                                 <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                                     Tasked To <span className="text-red-500">*</span>
                                 </label>
@@ -154,32 +169,43 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
                                     <button
                                         type="button"
                                         onClick={() => setShowDropdown((p) => !p)}
-                                        className="w-full flex justify-between items-center rounded border px-3 py-2 text-left dark:border-gray-600 dark:bg-slate-800 dark:text-white"
+                                        className="flex w-full items-center justify-between rounded border px-3 py-2 text-left dark:border-gray-600 dark:bg-slate-800 dark:text-white"
                                     >
-                                        {taskForm.doc_tasked_to ? (
-                                            (() => {
+                                        {taskForm.doc_tasked_to
+                                            ? (() => {
                                                 const selected = users.find((u) => u.user_id === taskForm.doc_tasked_to) || {};
                                                 return (
                                                     <span>
                                                         {selected.user_fname || ""} {selected.user_mname ? selected.user_mname[0] + ". " : ""}
                                                         {selected.user_lname || ""}
                                                         {selected.user_role && (
-                                                            <span className={`ml-2 px-2 py-0.5 rounded text-xs font-medium ${selected.user_role === "Paralegal" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}>
+                                                            <span
+                                                                className={`ml-2 rounded px-2 py-0.5 text-xs font-medium ${selected.user_role === "Paralegal" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}
+                                                            >
                                                                 {selected.user_role}
                                                             </span>
                                                         )}
                                                     </span>
                                                 );
                                             })()
-                                        ) : (
-                                            "Select Staff / Paralegal"
-                                        )}
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                            : "Select Staff / Paralegal"}
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="ml-2 h-4 w-4 opacity-70"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M19 9l-7 7-7-7"
+                                            />
                                         </svg>
                                     </button>
                                     {showDropdown && (
-                                        <div className="absolute z-10 mt-1 w-full rounded border bg-white shadow dark:border-gray-600 dark:bg-slate-800 max-h-48 overflow-y-auto">
+                                        <div className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded border bg-white shadow dark:border-gray-600 dark:bg-slate-800">
                                             {users
                                                 .filter((u) => u.user_role === "Paralegal" || u.user_role === "Staff")
                                                 .map((u) => (
@@ -189,13 +215,15 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
                                                             setTaskForm((prev) => ({ ...prev, doc_tasked_to: u.user_id }));
                                                             setShowDropdown(false);
                                                         }}
-                                                        className="cursor-pointer px-3 py-2 hover:bg-blue-50 dark:hover:bg-slate-700 flex justify-between items-center"
+                                                        className="flex cursor-pointer items-center justify-between px-3 py-2 hover:bg-blue-50 dark:hover:bg-slate-700"
                                                     >
                                                         <span className="text-gray-800 dark:text-gray-100">
                                                             {u.user_fname} {u.user_mname ? u.user_mname[0] + ". " : ""}
                                                             {u.user_lname}
                                                         </span>
-                                                        <span className={`ml-2 px-2 py-0.5 rounded text-xs font-medium ${u.user_role === "Paralegal" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}>
+                                                        <span
+                                                            className={`ml-2 rounded px-2 py-0.5 text-xs font-medium ${u.user_role === "Paralegal" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}
+                                                        >
                                                             {u.user_role}
                                                         </span>
                                                     </div>
@@ -206,14 +234,34 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
                             </div>
 
                             <div className="flex flex-col">
-                                <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Document Name <span className="text-red-500">*</span></label>
-                                <input name="doc_name" value={taskForm.doc_name} onChange={onTaskChange} type="text" required className="rounded border px-3 py-2 dark:border-gray-600 dark:bg-slate-800 dark:text-white" />
+                                <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Document Name <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    name="doc_name"
+                                    value={taskForm.doc_name}
+                                    onChange={onTaskChange}
+                                    type="text"
+                                    required
+                                    className="rounded border px-3 py-2 dark:border-gray-600 dark:bg-slate-800 dark:text-white"
+                                />
                             </div>
 
                             <div className="flex flex-col">
-                                <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Priority Level <span className="text-red-500">*</span></label>
-                                <select name="doc_prio_level" value={taskForm.doc_prio_level} onChange={onPriorityChange} className="rounded border px-3 py-2 dark:border-gray-600 dark:bg-slate-800 dark:text-white" required>
-                                    <option value="" disabled>
+                                <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Priority Level <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    name="doc_prio_level"
+                                    value={taskForm.doc_prio_level}
+                                    onChange={onPriorityChange}
+                                    className="rounded border px-3 py-2 dark:border-gray-600 dark:bg-slate-800 dark:text-white"
+                                    required
+                                >
+                                    <option
+                                        value=""
+                                        disabled
+                                    >
                                         Select priority
                                     </option>
                                     <option value="Low">Low</option>
@@ -223,60 +271,146 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
                             </div>
 
                             <div className="flex flex-col">
-                                <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Due Date <span className="text-red-500">*</span></label>
-                                <input name="doc_due_date" value={taskForm.doc_due_date ? String(taskForm.doc_due_date).slice(0, 10) : ""} type="date" readOnly required className="rounded border px-3 py-2 dark:border-gray-600 dark:bg-slate-800 dark:text-white" />
+                                <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Due Date <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    name="doc_due_date"
+                                    value={taskForm.doc_due_date ? String(taskForm.doc_due_date).slice(0, 10) : ""}
+                                    type="date"
+                                    readOnly
+                                    required
+                                    className="rounded border px-3 py-2 dark:border-gray-600 dark:bg-slate-800 dark:text-white"
+                                />
                             </div>
 
                             <div className="flex flex-col">
-                                <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Tag <span className="text-red-500">*</span></label>
-                                <input name="doc_tag" value={taskForm.doc_tag} onChange={onTaskChange} type="text" className="rounded border px-3 py-2 dark:border-gray-600 dark:bg-slate-800 dark:text-white" />
+                                <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Tag <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    name="doc_tag"
+                                    value={taskForm.doc_tag}
+                                    onChange={onTaskChange}
+                                    type="text"
+                                    className="rounded border px-3 py-2 dark:border-gray-600 dark:bg-slate-800 dark:text-white"
+                                />
                             </div>
 
                             <div className="flex flex-col">
                                 <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
-                                <input name="doc_password" value={taskForm.doc_password} onChange={onTaskChange} type="password" className="rounded border px-3 py-2 dark:border-gray-600 dark:bg-slate-800 dark:text-white" />
+                                <input
+                                    name="doc_password"
+                                    value={taskForm.doc_password}
+                                    onChange={onTaskChange}
+                                    type="password"
+                                    className="rounded border px-3 py-2 dark:border-gray-600 dark:bg-slate-800 dark:text-white"
+                                />
                             </div>
                         </div>
 
                         <div className="md:col-span-2">
-                            <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Task Description <span className="text-red-500">*</span></label>
-                            <textarea name="doc_task" value={taskForm.doc_task} onChange={onTaskChange} rows={3} className="w-full resize-none rounded-lg border px-3 py-2 dark:border-gray-600 dark:bg-slate-700 dark:text-white" required />
+                            <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Task Description <span className="text-red-500">*</span>
+                            </label>
+                            <textarea
+                                name="doc_task"
+                                value={taskForm.doc_task}
+                                onChange={onTaskChange}
+                                rows={3}
+                                className="w-full resize-none rounded-lg border px-3 py-2 dark:border-gray-600 dark:bg-slate-700 dark:text-white"
+                                required
+                            />
                         </div>
 
                         <div className="flex justify-end gap-2">
-                            <button type="button" onClick={onClose} className="rounded border px-4 py-2 text-sm">
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="rounded border px-4 py-2 text-sm"
+                            >
                                 Cancel
                             </button>
-                            <button type="submit" disabled={submitting} className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-60">
+                            <button
+                                type="submit"
+                                disabled={submitting}
+                                className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-60"
+                            >
                                 {submitting ? "Saving..." : "Save Changes"}
                             </button>
                         </div>
                     </form>
                 ) : (
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form
+                        onSubmit={handleSubmit}
+                        className="space-y-4"
+                    >
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                             <div className="flex flex-col">
-                                <label className="mb-1 text-sm font-medium">Document Name <span className="text-red-500">*</span></label>
-                                <input name="doc_name" value={supportForm.doc_name} onChange={onSupportChange} type="text" required className="rounded border px-3 py-2 dark:border-gray-600 dark:bg-slate-800 dark:text-white" />
+                                <label className="mb-1 text-sm font-medium">
+                                    Document Name <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    name="doc_name"
+                                    value={supportForm.doc_name}
+                                    onChange={onSupportChange}
+                                    type="text"
+                                    required
+                                    className="rounded border px-3 py-2 dark:border-gray-600 dark:bg-slate-800 dark:text-white"
+                                />
                             </div>
                             <div className="flex flex-col">
-                                <label className="mb-1 text-sm font-medium">Tag <span className="text-red-500">*</span></label>
-                                <input name="doc_tag" value={supportForm.doc_tag} onChange={onSupportChange} type="text" className="rounded border px-3 py-2 dark:border-gray-600 dark:bg-slate-800 dark:text-white" />
+                                <label className="mb-1 text-sm font-medium">
+                                    Tag <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    name="doc_tag"
+                                    value={supportForm.doc_tag}
+                                    onChange={onSupportChange}
+                                    type="text"
+                                    className="rounded border px-3 py-2 dark:border-gray-600 dark:bg-slate-800 dark:text-white"
+                                />
                             </div>
                             <div className="flex flex-col">
                                 <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Password (optional)</label>
-                                <input name="doc_password" value={supportForm.doc_password} onChange={onSupportChange} type="password" className="rounded border px-3 py-2 dark:border-gray-600 dark:bg-slate-800 dark:text-white" />
+                                <input
+                                    name="doc_password"
+                                    value={supportForm.doc_password}
+                                    onChange={onSupportChange}
+                                    type="password"
+                                    className="rounded border px-3 py-2 dark:border-gray-600 dark:bg-slate-800 dark:text-white"
+                                />
                             </div>
                         </div>
 
                         <div className="col-span-2">
-                            <label className="mb-1 text-sm font-medium">Description <span className="text-red-500">*</span></label>
-                            <textarea name="doc_description" value={supportForm.doc_description} onChange={onSupportChange} rows={2} className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm dark:bg-slate-800" />
+                            <label className="mb-1 text-sm font-medium">
+                                Description <span className="text-red-500">*</span>
+                            </label>
+                            <textarea
+                                name="doc_description"
+                                value={supportForm.doc_description}
+                                onChange={onSupportChange}
+                                rows={2}
+                                className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm dark:bg-slate-800"
+                            />
                         </div>
 
                         <div className="flex justify-end gap-2">
-                            <button type="button" onClick={onClose} className="rounded border px-4 py-2 text-sm">Cancel</button>
-                            <button type="submit" disabled={submitting} className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-60">{submitting ? "Saving..." : "Save Changes"}</button>
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="rounded border px-4 py-2 text-sm"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={submitting}
+                                className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-60"
+                            >
+                                {submitting ? "Saving..." : "Save Changes"}
+                            </button>
                         </div>
                     </form>
                 )}

@@ -495,7 +495,7 @@ const Settings = () => {
         { key: "access", label: "Case Access", icon: Lock },
         { key: "case-categories", label: "Case Categories & Types ", icon: List },
         { key: "archive", label: "Archive", icon: Archive },
-        { key: "logs", label: "Logs & Audit Trail", icon: Info },
+        // { key: "logs", label: "Logs & Audit Trail", icon: Info },
     ];
 
     // Display helpers resilient to backend shapes
@@ -951,132 +951,132 @@ const Settings = () => {
 
                 {/* Logs & Audit Trail */}
                 {
-                    activeTab === "logs" && (
-                        <div className="space-y-6">
-                            <SettingsCard
-                                title="Logs & Audit Trail"
-                                actions={
-                                    <button
-                                        onClick={loadLogs}
-                                        className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
-                                    >
-                                        <RefreshCw size={14} /> Refresh
-                                    </button>
-                                }
-                            >
-                                {/* Filters */}
-                                <div className="space-y-3">
-                                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                                        <input
-                                            value={logQuery}
-                                            onChange={(e) => setLogQuery(e.target.value)}
-                                            placeholder="Search action/details"
-                                            className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
-                                        />
-                                        <input
-                                            type="number"
-                                            value={logUserId}
-                                            onChange={(e) => setLogUserId(e.target.value)}
-                                            placeholder="User ID (optional)"
-                                            className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
-                                        />
-                                        <input
-                                            type="date"
-                                            value={logStart}
-                                            onChange={(e) => setLogStart(e.target.value)}
-                                            className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
-                                        />
-                                        <input
-                                            type="date"
-                                            value={logEnd}
-                                            onChange={(e) => setLogEnd(e.target.value)}
-                                            className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
-                                        />
-                                    </div>
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <select
-                                            value={logLimit}
-                                            onChange={(e) => setLogLimit(Number(e.target.value) || 20)}
-                                            className="rounded-lg border px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
-                                        >
-                                            <option value={10}>10 per page</option>
-                                            <option value={20}>20 per page</option>
-                                            <option value={50}>50 per page</option>
-                                        </select>
-                                        <button
-                                            onClick={applyLogFilters}
-                                            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-white hover:bg-blue-700"
-                                            disabled={logsLoading}
-                                        >
-                                            Apply
-                                        </button>
-                                        <button
-                                            onClick={clearLogFilters}
-                                            className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
-                                            disabled={logsLoading}
-                                        >
-                                            Clear
-                                        </button>
-                                        <button
-                                            onClick={exportLogsCSV}
-                                            className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
-                                        >
-                                            Export CSV
-                                        </button>
-                                    </div>
-                                </div>
+                    // activeTab === "logs" && (
+                    //     <div className="space-y-6">
+                    //         <SettingsCard
+                    //             title="Logs & Audit Trail"
+                    //             actions={
+                    //                 <button
+                    //                     onClick={loadLogs}
+                    //                     className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
+                    //                 >
+                    //                     <RefreshCw size={14} /> Refresh
+                    //                 </button>
+                    //             }
+                    //         >
+                    //             {/* Filters */}
+                    //             <div className="space-y-3">
+                    //                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                    //                     <input
+                    //                         value={logQuery}
+                    //                         onChange={(e) => setLogQuery(e.target.value)}
+                    //                         placeholder="Search action/details"
+                    //                         className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
+                    //                     />
+                    //                     <input
+                    //                         type="number"
+                    //                         value={logUserId}
+                    //                         onChange={(e) => setLogUserId(e.target.value)}
+                    //                         placeholder="User ID (optional)"
+                    //                         className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
+                    //                     />
+                    //                     <input
+                    //                         type="date"
+                    //                         value={logStart}
+                    //                         onChange={(e) => setLogStart(e.target.value)}
+                    //                         className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
+                    //                     />
+                    //                     <input
+                    //                         type="date"
+                    //                         value={logEnd}
+                    //                         onChange={(e) => setLogEnd(e.target.value)}
+                    //                         className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
+                    //                     />
+                    //                 </div>
+                    //                 <div className="flex flex-wrap items-center gap-2">
+                    //                     <select
+                    //                         value={logLimit}
+                    //                         onChange={(e) => setLogLimit(Number(e.target.value) || 20)}
+                    //                         className="rounded-lg border px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
+                    //                     >
+                    //                         <option value={10}>10 per page</option>
+                    //                         <option value={20}>20 per page</option>
+                    //                         <option value={50}>50 per page</option>
+                    //                     </select>
+                    //                     <button
+                    //                         onClick={applyLogFilters}
+                    //                         className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-white hover:bg-blue-700"
+                    //                         disabled={logsLoading}
+                    //                     >
+                    //                         Apply
+                    //                     </button>
+                    //                     <button
+                    //                         onClick={clearLogFilters}
+                    //                         className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
+                    //                         disabled={logsLoading}
+                    //                     >
+                    //                         Clear
+                    //                     </button>
+                    //                     <button
+                    //                         onClick={exportLogsCSV}
+                    //                         className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
+                    //                     >
+                    //                         Export CSV
+                    //                     </button>
+                    //                 </div>
+                    //             </div>
 
-                                {logsLoading ? (
-                                    <p className="text-sm text-gray-500">Loading…</p>
-                                ) : logsError ? (
-                                    <p className="text-sm text-red-500">{logsError}</p>
-                                ) : logs.length === 0 ? (
-                                    <p className="text-sm text-gray-500">No logs found.</p>
-                                ) : (
-                                    <ul className="space-y-2">
-                                        {logs.map((lg, idx) => {
-                                            const ts = lg?.created_at || lg?.timestamp || lg?.date;
-                                            const when = ts ? new Date(ts).toLocaleString() : "";
-                                            const actor =
-                                                (typeof displayUserName === "function" && displayUserName(lg)) ||
-                                                lg?.performed_by ||
-                                                lg?.user_email ||
-                                                lg?.user ||
-                                                "—";
-                                            const action = lg?.action || lg?.event || lg?.activity || lg?.type || "Log entry";
-                                            const details = lg?.details || lg?.description || lg?.message || "";
-                                            return (
-                                                <li
-                                                    key={lg?.log_id ?? lg?.id ?? idx}
-                                                    className="rounded-lg border px-3 py-2 dark:border-gray-700"
-                                                >
-                                                    <div className="font-medium">{action}</div>
-                                                    <div className="text-xs text-gray-500">
-                                                        {when}
-                                                        {actor ? ` • ${actor}` : ""}
-                                                    </div>
-                                                    {details && <div className="mt-1 text-sm text-gray-700 dark:text-gray-300">{details}</div>}
-                                                </li>
-                                            );
-                                        })}
-                                    </ul>
-                                )}
+                    //             {logsLoading ? (
+                    //                 <p className="text-sm text-gray-500">Loading…</p>
+                    //             ) : logsError ? (
+                    //                 <p className="text-sm text-red-500">{logsError}</p>
+                    //             ) : logs.length === 0 ? (
+                    //                 <p className="text-sm text-gray-500">No logs found.</p>
+                    //             ) : (
+                    //                 <ul className="space-y-2">
+                    //                     {logs.map((lg, idx) => {
+                    //                         const ts = lg?.created_at || lg?.timestamp || lg?.date;
+                    //                         const when = ts ? new Date(ts).toLocaleString() : "";
+                    //                         const actor =
+                    //                             (typeof displayUserName === "function" && displayUserName(lg)) ||
+                    //                             lg?.performed_by ||
+                    //                             lg?.user_email ||
+                    //                             lg?.user ||
+                    //                             "—";
+                    //                         const action = lg?.action || lg?.event || lg?.activity || lg?.type || "Log entry";
+                    //                         const details = lg?.details || lg?.description || lg?.message || "";
+                    //                         return (
+                    //                             <li
+                    //                                 key={lg?.log_id ?? lg?.id ?? idx}
+                    //                                 className="rounded-lg border px-3 py-2 dark:border-gray-700"
+                    //                             >
+                    //                                 <div className="font-medium">{action}</div>
+                    //                                 <div className="text-xs text-gray-500">
+                    //                                     {when}
+                    //                                     {actor ? ` • ${actor}` : ""}
+                    //                                 </div>
+                    //                                 {details && <div className="mt-1 text-sm text-gray-700 dark:text-gray-300">{details}</div>}
+                    //                             </li>
+                    //                         );
+                    //                     })}
+                    //                 </ul>
+                    //             )}
 
-                                {logHasMore && !logsLoading && (
-                                    <div className="mt-3 flex justify-center">
-                                        <button
-                                            onClick={loadMoreLogs}
-                                            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-                                        >
-                                            Load more
-                                        </button>
-                                    </div>
-                                )}
+                    //             {logHasMore && !logsLoading && (
+                    //                 <div className="mt-3 flex justify-center">
+                    //                     <button
+                    //                         onClick={loadMoreLogs}
+                    //                         className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                    //                     >
+                    //                         Load more
+                    //                     </button>
+                    //                 </div>
+                    //             )}
 
-                                <p className="mt-2 text-xs text-gray-500">Showing latest 50 entries or filtered results.</p>
-                            </SettingsCard>
-                        </div>
-                    )
+                    //             <p className="mt-2 text-xs text-gray-500">Showing latest 50 entries or filtered results.</p>
+                    //         </SettingsCard>
+                    //     </div>
+                    // )
                 }
             </main >
         </div >

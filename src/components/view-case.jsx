@@ -19,7 +19,7 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
     const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
     const [isAddDocumentOpen, setIsAddDocumentOpen] = useState(false);
 
-   // New: track document being edited
+    // New: track document being edited
     const [editDoc, setEditDoc] = useState(null);
     const [rejectDoc, setRejectDoc] = useState(null);
     const [deleteDoc, setDeleteDoc] = useState(null);
@@ -453,7 +453,7 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
                                                         >
                                                             <Pen size={16} />
                                                         </button>
-                                                        {doc.doc_type !== "Support" && (
+                                                        {doc.doc_type !== "Support" && doc.doc_status === "done" && (
                                                             <button
                                                                 className="text-red-600 hover:text-red-800"
                                                                 title="Reject Document"
@@ -566,6 +566,12 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
                                     title="Closing or Finishing the Case"
                                     className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-3 py-2 text-sm text-white hover:bg-green-700"
                                     onClick={() => {
+                                        // Prevent closing if there are pending or in-progress documents
+                                        const hasPendingDocs = (documents || []).some(d => ["todo", "in_progress"].includes(d.doc_status));
+                                        if (hasPendingDocs) {
+                                            toast.error("You still have pending or in-progress documents. Complete them before closing the case.");
+                                            return; // do not open modal
+                                        }
                                         setActionType("close");
                                         setIsActionModalOpen(true);
                                     }}

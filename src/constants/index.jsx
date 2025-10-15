@@ -5,13 +5,12 @@ const allNavbarLinks = [
     { label: "Cases", icon: Folders, path: "/cases" },
     { label: "Documents", icon: FileText, path: "/documents" },
     { label: "Clients", icon: Users, path: "/clients" },
-    // { label: "Tasks", icon: ListTodo, path: "/tasks" },
-    { label: "Tasks", icon: ListTodo, path: "/tasking" },
+    { label: "Tasks", icon: ListTodo, path: "/tasks" },
     { label: "Users", icon: ShieldUser, path: "/users" },
     { label: "Reports", icon: ChartColumn, path: "/reports" },
-    { label: "Activity Logs", icon: Logs, path: "/user-logs" },
     { label: "Case Archive", icon: Archive, path: "/case-archive" },
     { label: "Payments", icon: Wallet, path: "/payments" },
+    { label: "Activity Logs", icon: Logs, path: "/user-logs" },
 ];
 
 // 🔧 Export a function to get filtered links based on role
@@ -25,11 +24,11 @@ export const getNavbarLinks = (role) => {
     }
 
     if (role === "Staff") {
-        return allNavbarLinks.filter((link) => ["Home", "Clients", "Tasks", "Activity Logs"].includes(link.label));
+        return allNavbarLinks.filter((link) => ["Home", "Documents", "Clients", "Tasks", "Activity Logs"].includes(link.label));
     }
 
     if (role === "Paralegal") {
-        return allNavbarLinks.filter((link) => ["Home", "Tasks", "Activity Logs"].includes(link.label));
+        return allNavbarLinks.filter((link) => ["Home", "Documents", "Tasks", "Activity Logs"].includes(link.label));
     }
 
     return [];
@@ -62,6 +61,7 @@ export const overviewData = [
     },
 ];
 
+// Task Management Columns or Statuses
 export const COLUMNS = [
     { id: "todo", title: "To Do" },
     { id: "in_progress", title: "In Progress" },

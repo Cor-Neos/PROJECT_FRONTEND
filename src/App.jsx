@@ -12,7 +12,6 @@ import Login from "./auth/login";
 import ForgotPassword from "./auth/forgotpassword";
 import Users from "./routes/sidebar/users";
 import Documents from "./routes/sidebar/documents";
-import Tasks from "./routes/sidebar/tasks";
 import Cases from "./routes/sidebar/cases";
 import Archives from "./routes/sidebar/archives";
 import Userlogs from "./routes/sidebar/user-logs";
@@ -22,13 +21,13 @@ import NotificationSettings from "./components/notif-settings";
 import Verify from "./auth/verification";
 import Register from "./components/registration";
 import Clients from "./routes/sidebar/clients";
+import Tasks from "./routes/sidebar/task";
 import ClientContact from "./components/client-contacts";
 import ChangePass from "./auth/changepass";
 import Promotion from "./components/promotion";
 import { UnauthorizedAccess } from "./auth/unauthorized";
 import { Payments } from "./routes/sidebar/payments";
 import Settings from "./components/settings";
-import Tasking from "./routes/sidebar/tasking";
 
 export default function App() {
     const router = createBrowserRouter([
@@ -64,7 +63,6 @@ export default function App() {
                         { path: "documents", element: <Documents /> },
                         { path: "clients", element: <Clients /> },
                         { path: "clients/contacts", element: <ClientContact /> },
-                        { path: "tasking", element: <Tasking /> },
                         { path: "tasks", element: <Tasks /> },
                         { path: "users", element: <Users /> },
                         {
