@@ -317,12 +317,6 @@ const Settings = () => {
         }
     };
 
-    const removeCustomCategory = (name) => {
-        const next = customCategories.filter((c) => c !== name);
-        setCustomCategories(next);
-        saveCaseCustomPrefs(next, undefined);
-    };
-
     const addCustomType = async (e) => {
         e.preventDefault();
         const name = newTypeName.trim();
@@ -358,25 +352,19 @@ const Settings = () => {
         }
     };
 
-    const removeCustomType = (name) => {
-        const next = customTypes.filter((t) => t !== name);
-        setCustomTypes(next);
-        saveCaseCustomPrefs(undefined, next);
-    };
-
     // Add archived cases functions
     const loadArchivedCases = async () => {
         setArchivedCasesError("");
         setArchivedCasesLoading(true);
         try {
-            const endpoint = user?.user_role === "Admin"
-                ? `${API_BASE}/cases`
-                : `${API_BASE}/cases/user/${user?.user_id}`;
+            const endpoint = user?.user_role === "Admin" ? `${API_BASE}/cases` : `${API_BASE}/cases/user/${user?.user_id}`;
 
             const data = await fetchJson(endpoint);
-            const archived = Array.isArray(data)
-                ? data.filter((item) => item.case_status && item.case_status.toLowerCase() === "archived")
-                : [];
+            const archived = data.filter(
+                (item) =>
+                    (item.case_status && item.case_status.toLowerCase() === "archived (completed)") ||
+                    item.case_status.toLowerCase() === "archived (dismissed)",
+            );
             setArchivedCases(archived);
         } catch (e) {
             setArchivedCasesError(e.message || "Failed to load archived cases");
@@ -387,9 +375,7 @@ const Settings = () => {
     };
 
     const handleCaseUpdated = (updatedCase) => {
-        setArchivedCases((prev) =>
-            prev.map((c) => (c.case_id === updatedCase.case_id ? updatedCase : c))
-        );
+        setArchivedCases((prev) => prev.map((c) => (c.case_id === updatedCase.case_id ? updatedCase : c)));
     };
 
     const handleUnarchive = async (caseToBeUnarchived) => {
@@ -408,15 +394,13 @@ const Settings = () => {
                 body: JSON.stringify({
                     ...caseToBeUnarchived,
                     case_status: "Completed",
-                    last_updated_by: user.user_id
+                    last_updated_by: user.user_id,
                 }),
             });
 
             if (!res.ok) throw new Error("Failed to unarchive case");
 
-            setArchivedCases((prev) =>
-                prev.filter((item) => item.case_id !== caseToBeUnarchived.case_id)
-            );
+            setArchivedCases((prev) => prev.filter((item) => item.case_id !== caseToBeUnarchived.case_id));
 
             // Update archive counts
             loadArchiveCounts();
@@ -456,7 +440,6 @@ const Settings = () => {
         if (user) {
             loadArchivedCases();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
 
     const tabs = [
@@ -474,11 +457,9 @@ const Settings = () => {
             item.client_fullname?.toLowerCase().includes(archiveSearch.toLowerCase()) ||
             item.case_id.toString().includes(archiveSearch);
 
-        const isOwner = item.lawyer_id === user?.user_id;
+        const isOwner = item.user_id === user?.user_id;
         const isAdmin = user?.user_role === "Admin";
-        const isAllowed = Array.isArray(item.case_allowed_viewers)
-            ? item.case_allowed_viewers.includes(user?.user_id)
-            : false;
+        const isAllowed = Array.isArray(item.case_allowed_viewers) ? item.case_allowed_viewers.includes(user?.user_id) : false;
 
         return matchesSearch && (isOwner || isAdmin || isAllowed);
     });
@@ -621,8 +602,8 @@ const Settings = () => {
                             key={tab.key}
                             onClick={() => setActiveTab(tab.key)}
                             className={`group relative flex items-center gap-3 rounded-md border px-4 py-2 text-sm font-medium transition-colors ${activeTab === tab.key
-                                ? "border-blue-500/60 bg-blue-600 text-white shadow-lg shadow-blue-500/20"
-                                : "border-transparent text-gray-700 hover:bg-blue-50 hover:text-blue-700 dark:text-gray-300 dark:hover:bg-gray-800/80"
+                                    ? "border-blue-500/60 bg-blue-600 text-white shadow-lg shadow-blue-500/20"
+                                    : "border-transparent text-gray-700 hover:bg-blue-50 hover:text-blue-700 dark:text-gray-300 dark:hover:bg-gray-800/80"
                                 } `}
                         >
                             <tab.icon size={18} />
@@ -814,15 +795,21 @@ const Settings = () => {
                                     <p className="text-sm text-gray-500">No users found.</p>
                                 ) : (
                                     <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                                        {users.map((u) => (
-                                            <li
-                                                key={u.user_id ?? u.id}
-                                                className="rounded-lg border px-3 py-2 dark:border-gray-700"
-                                            >
-                                                <div className="font-medium">{displayUserName(u)}</div>
-                                                <div className="text-xs text-gray-500">{u?.user_role || "—"}</div>
-                                            </li>
-                                        ))}
+                                        {users
+                                            .filter(
+                                                (u) =>
+                                                    u.user_role &&
+                                                    (u.user_role.toLowerCase() === "paralegal" || u.user_role.toLowerCase() === "staff"),
+                                            )
+                                            .map((u) => (
+                                                <li
+                                                    key={u.user_id ?? u.id}
+                                                    className="rounded-lg border px-3 py-2 dark:border-gray-700"
+                                                >
+                                                    <div className="font-medium">{displayUserName(u)}</div>
+                                                    <div className="text-xs text-gray-500">{u?.user_role || "—"}</div>
+                                                </li>
+                                            ))}
                                     </ul>
                                 )}
 
@@ -837,176 +824,169 @@ const Settings = () => {
                         </div>
                     ))}
 
-
                 {/* Archive */}
-                {
-                    activeTab === "archive" && (
-                        <div className="space-y-6">
-                            <SettingsCard
-                                title="Archive"
-                                actions={
+                {activeTab === "archive" && (
+                    <div className="space-y-6">
+                        <SettingsCard
+                            title="Cases"
+                            actions={
+                                <button
+                                    onClick={loadArchiveCounts}
+                                    className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
+                                >
+                                    <RefreshCw size={14} /> Refresh
+                                </button>
+                            }
+                        >
+                            {archiveCountsLoading ? (
+                                <p className="text-sm text-gray-500">Loading…</p>
+                            ) : archiveCountsError ? (
+                                <p className="text-sm text-red-500">{archiveCountsError}</p>
+                            ) : (
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                                    <div className="rounded-lg border bg-white/60 p-4 dark:border-gray-700 dark:bg-gray-800/60">
+                                        <div className="text-xs text-gray-500">All Processing</div>
+                                        <div className="mt-1 text-2xl font-semibold">{processingCount ?? 0}</div>
+                                    </div>
+                                    <div className="rounded-lg border bg-white/60 p-4 dark:border-gray-700 dark:bg-gray-800/60">
+                                        <div className="text-xs text-gray-500">All Archived</div>
+                                        <div className="mt-1 text-2xl font-semibold">{archivedCount ?? 0}</div>
+                                    </div>
+                                    {user && (
+                                        <>
+                                            <div className="rounded-lg border bg-white/60 p-4 dark:border-gray-700 dark:bg-gray-800/60">
+                                                <div className="text-xs text-gray-500">My Processing</div>
+                                                <div className="mt-1 text-2xl font-semibold">{userProcessingCount ?? 0}</div>
+                                            </div>
+                                            <div className="rounded-lg border bg-white/60 p-4 dark:border-gray-700 dark:bg-gray-800/60">
+                                                <div className="text-xs text-gray-500">My Archived</div>
+                                                <div className="mt-1 text-2xl font-semibold">{userArchivedCount ?? 0}</div>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            )}
+                            <p className="mt-2 text-xs text-gray-500">Counts are based on current server data.</p>
+                        </SettingsCard>
+
+                        {/* Archived Cases List */}
+                        <SettingsCard
+                            title="Archived Cases"
+                            actions={
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                                        {filteredArchivedCases.length} case{filteredArchivedCases.length !== 1 ? "s" : ""}
+                                    </span>
                                     <button
-                                        onClick={loadArchiveCounts}
+                                        onClick={loadArchivedCases}
                                         className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
                                     >
                                         <RefreshCw size={14} /> Refresh
                                     </button>
-                                }
-                            >
-                                {archiveCountsLoading ? (
-                                    <p className="text-sm text-gray-500">Loading…</p>
-                                ) : archiveCountsError ? (
-                                    <p className="text-sm text-red-500">{archiveCountsError}</p>
-                                ) : (
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                                        <div className="rounded-lg border bg-white/60 p-4 dark:border-gray-700 dark:bg-gray-800/60">
-                                            <div className="text-xs text-gray-500">All Processing</div>
-                                            <div className="mt-1 text-2xl font-semibold">{processingCount ?? 0}</div>
-                                        </div>
-                                        <div className="rounded-lg border bg-white/60 p-4 dark:border-gray-700 dark:bg-gray-800/60">
-                                            <div className="text-xs text-gray-500">All Archived</div>
-                                            <div className="mt-1 text-2xl font-semibold">{archivedCount ?? 0}</div>
-                                        </div>
-                                        {user && (
-                                            <>
-                                                <div className="rounded-lg border bg-white/60 p-4 dark:border-gray-700 dark:bg-gray-800/60">
-                                                    <div className="text-xs text-gray-500">My Processing</div>
-                                                    <div className="mt-1 text-2xl font-semibold">{userProcessingCount ?? 0}</div>
-                                                </div>
-                                                <div className="rounded-lg border bg-white/60 p-4 dark:border-gray-700 dark:bg-gray-800/60">
-                                                    <div className="text-xs text-gray-500">My Archived</div>
-                                                    <div className="mt-1 text-2xl font-semibold">{userArchivedCount ?? 0}</div>
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                )}
-                                <p className="mt-2 text-xs text-gray-500">Counts are based on current server data.</p>
-                            </SettingsCard>
-
-                            {/* Archived Cases List */}
-                            <SettingsCard
-                                title="Archived Cases"
-                                actions={
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                                            {filteredArchivedCases.length} case{filteredArchivedCases.length !== 1 ? 's' : ''}
-                                        </span>
-                                        <button
-                                            onClick={loadArchivedCases}
-                                            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
-                                        >
-                                            <RefreshCw size={14} /> Refresh
-                                        </button>
-                                    </div>
-                                }
-                            >
-                                {/* Search */}
-                                <div className="mb-4">
-                                    <input
-                                        type="text"
-                                        placeholder="Search archived cases..."
-                                        value={archiveSearch}
-                                        onChange={(e) => setArchiveSearch(e.target.value)}
-                                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400"
-                                    />
                                 </div>
+                            }
+                        >
+                            {/* Search */}
+                            <div className="mb-4">
+                                <input
+                                    type="text"
+                                    placeholder="Search archived cases..."
+                                    value={archiveSearch}
+                                    onChange={(e) => setArchiveSearch(e.target.value)}
+                                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400"
+                                />
+                            </div>
 
-                                {/* Cases List */}
-                                {archivedCasesLoading ? (
-                                    <p className="text-sm text-gray-500">Loading archived cases…</p>
-                                ) : archivedCasesError ? (
-                                    <p className="text-sm text-red-500">{archivedCasesError}</p>
-                                ) : filteredArchivedCases.length > 0 ? (
-                                    <div className="space-y-3">
-                                        {filteredArchivedCases.map((caseItem) => (
-                                            <div
-                                                key={caseItem.case_id}
-                                                className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
-                                            >
-                                                <div className="flex items-start justify-between">
-                                                    <div className="flex-1 space-y-2">
-                                                        <div className="flex items-center gap-2">
-                                                            <h4 className="font-medium text-gray-900 dark:text-white">
-                                                                Case #{caseItem.case_id}
-                                                            </h4>
-                                                            <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                                                                Archived
-                                                            </span>
-                                                        </div>
-
-                                                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                                            {caseItem.ct_name}
-                                                        </p>
-                                                        <div className="flex flex-wrap gap-4 text-xs text-gray-500 dark:text-gray-400">
-                                                            <div className="flex items-center gap-1">
-                                                                <User size={12} />
-                                                                <span>{caseItem.client_fullname}</span>
-                                                            </div>
-
-                                                            {user?.user_role === "Admin" && (
-                                                                <div className="flex items-center gap-1">
-                                                                    <span>Atty. {getLawyerFullName(caseItem.user_id)}</span>
-                                                                </div>
-                                                            )}
-
-                                                            <div className="flex items-center gap-1">
-                                                                <Calendar size={12} />
-                                                                <span>Archived: {formatDateTime(caseItem.case_last_updated)}</span>
-                                                            </div>
-                                                        </div>
+                            {/* Cases List */}
+                            {archivedCasesLoading ? (
+                                <p className="text-sm text-gray-500">Loading archived cases…</p>
+                            ) : archivedCasesError ? (
+                                <p className="text-sm text-red-500">{archivedCasesError}</p>
+                            ) : filteredArchivedCases.length > 0 ? (
+                                <div className="space-y-3">
+                                    {filteredArchivedCases.map((caseItem) => (
+                                        <div
+                                            key={caseItem.case_id}
+                                            className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+                                        >
+                                            <div className="flex items-start justify-between">
+                                                <div className="flex-1 space-y-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <h4 className="font-medium text-gray-900 dark:text-white">Case #{caseItem.case_id}</h4>
+                                                        <span
+                                                            className={`rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300`}
+                                                        >
+                                                            {caseItem.case_status}
+                                                        </span>
                                                     </div>
 
-                                                    <div className="flex items-center gap-2">
-                                                        <button
-                                                            onClick={() => setSelectedCase(caseItem)}
-                                                            className="flex items-center gap-1 rounded-md bg-blue-50 px-3 py-1 text-sm text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30"
-                                                        >
-                                                            <Eye size={14} />
-                                                            View
-                                                        </button>
-
-                                                        {(user?.user_role === "Admin" || caseItem.lawyer_id === user?.user_id) && (
-                                                            <button
-                                                                onClick={() => {
-                                                                    setSelectedAccessCase(caseItem);
-                                                                    setSelectedUsers(caseItem.case_allowed_viewers || []);
-                                                                    setShowAccessModal(true);
-                                                                }}
-                                                                className="flex items-center gap-1 rounded-md bg-yellow-50 px-3 py-1 text-sm text-yellow-600 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-400 dark:hover:bg-yellow-900/30"
-                                                            >
-                                                                <Lock size={14} />
-                                                                Share Access
-                                                            </button>
-                                                        )}
+                                                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{caseItem.ct_name}</p>
+                                                    <div className="flex flex-wrap gap-4 text-xs text-gray-500 dark:text-gray-400">
+                                                        <div className="flex items-center gap-1">
+                                                            <User size={12} />
+                                                            <span>{caseItem.client_fullname}</span>
+                                                        </div>
 
                                                         {user?.user_role === "Admin" && (
-                                                            <button
-                                                                onClick={() => handleUnarchive(caseItem)}
-                                                                className="flex items-center gap-1 rounded-md bg-red-50 px-3 py-1 text-sm text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
-                                                            >
-                                                                <Archive size={14} />
-                                                                Unarchive
-                                                            </button>
+                                                            <div className="flex items-center gap-1">
+                                                                <span>Atty. {getLawyerFullName(caseItem.user_id)}</span>
+                                                            </div>
                                                         )}
+
+                                                        <div className="flex items-center gap-1">
+                                                            <Calendar size={12} />
+                                                            <span>Archived: {formatDateTime(caseItem.case_last_updated)}</span>
+                                                        </div>
                                                     </div>
+                                                </div>
 
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => setSelectedCase(caseItem)}
+                                                        className="flex items-center gap-1 rounded-md bg-blue-50 px-3 py-1 text-sm text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30"
+                                                    >
+                                                        <Eye size={14} />
+                                                        View
+                                                    </button>
 
+                                                    {(user?.user_role === "Admin" || caseItem.user_id === user?.user_id) && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setSelectedAccessCase(caseItem);
+                                                                setSelectedUsers(caseItem.case_allowed_viewers || []);
+                                                                setShowAccessModal(true);
+                                                            }}
+                                                            className="flex items-center gap-1 rounded-md bg-yellow-50 px-3 py-1 text-sm text-yellow-600 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-400 dark:hover:bg-yellow-900/30"
+                                                        >
+                                                            <Lock size={14} />
+                                                            Share Access
+                                                        </button>
+                                                    )}
+
+                                                    {user?.user_role === "Admin" && (
+                                                        <button
+                                                            onClick={() => handleUnarchive(caseItem)}
+                                                            className="flex items-center gap-1 rounded-md bg-red-50 px-3 py-1 text-sm text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
+                                                        >
+                                                            <Archive size={14} />
+                                                            Unarchive
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center dark:border-gray-700 dark:bg-gray-800">
-                                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                                            {archiveSearch ? "No archived cases match your search." : "No archived cases found."}
                                         </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center dark:border-gray-700 dark:bg-gray-800">
+                                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                                        {archiveSearch ? "No archived cases match your search." : "No archived cases found."}
                                     </div>
-                                )}
-                            </SettingsCard>
-                        </div>
-                    )
-                }
+                                </div>
+                            )}
+                        </SettingsCard>
+                    </div>
+                )}
 
                 {/* Case Preferences */}
                 {activeTab === "case-categories" && (
@@ -1157,7 +1137,7 @@ const Settings = () => {
             {showAccessModal && selectedAccessCase && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
                     <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-800 dark:text-gray-200">
-                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
                             <Lock size={18} />
                             Share Access for Case #{selectedAccessCase.case_id}
                         </h3>
@@ -1167,17 +1147,17 @@ const Settings = () => {
                         ) : usersError ? (
                             <p className="text-sm text-red-500">{usersError}</p>
                         ) : (
-                            <div className="max-h-64 overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700">
+                            <div className="max-h-64 divide-y divide-gray-200 overflow-y-auto dark:divide-gray-700">
                                 {users.map((u) => (
                                     <label
                                         key={u.user_id}
-                                        className="flex items-center justify-between py-2 px-1 hover:bg-gray-50 dark:hover:bg-gray-700/40"
+                                        className="flex items-center justify-between px-1 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/40"
                                     >
                                         <div className="flex flex-col">
-                                            <span className="font-medium text-sm">{u.user_fullname}</span>
-                                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                                                {u.user_role}
+                                            <span className="text-sm font-medium">
+                                                {u.user_fname} {u.user_mname} {u.user_lname}
                                             </span>
+                                            <span className="text-xs text-gray-500 dark:text-gray-400">{u.user_role}</span>
                                         </div>
                                         <input
                                             type="checkbox"
@@ -1186,12 +1166,10 @@ const Settings = () => {
                                                 if (e.target.checked) {
                                                     setSelectedUsers([...selectedUsers, u.user_id]);
                                                 } else {
-                                                    setSelectedUsers(
-                                                        selectedUsers.filter((id) => id !== u.user_id)
-                                                    );
+                                                    setSelectedUsers(selectedUsers.filter((id) => id !== u.user_id));
                                                 }
                                             }}
-                                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                         />
                                     </label>
                                 ))}
@@ -1217,10 +1195,8 @@ const Settings = () => {
                                         toast.success("Access updated!");
                                         setArchivedCases((prev) =>
                                             prev.map((item) =>
-                                                item.case_id === selectedAccessCase.case_id
-                                                    ? { ...item, case_allowed_viewers: selectedUsers }
-                                                    : item
-                                            )
+                                                item.case_id === selectedAccessCase.case_id ? { ...item, case_allowed_viewers: selectedUsers } : item,
+                                            ),
                                         );
                                         setShowAccessModal(false);
                                     } catch {
@@ -1235,7 +1211,6 @@ const Settings = () => {
                     </div>
                 </div>
             )}
-
         </div>
     );
 };

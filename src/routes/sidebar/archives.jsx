@@ -69,7 +69,11 @@ const Archives = () => {
         const data = await res.json();
 
         // Filter archived only
-        const archived = data.filter((item) => item.case_status && item.case_status.toLowerCase() === "archived");
+        const archived = data.filter(
+          (item) =>
+            (item.case_status && item.case_status.toLowerCase() === "archived (completed)") ||
+            item.case_status.toLowerCase() === "archived (dismissed)",
+        );
 
         setArchivedCases(archived);
       } catch (err) {
@@ -143,6 +147,7 @@ const Archives = () => {
       item.cc_name?.toLowerCase().includes(search.toLowerCase()) ||
       item.ct_name?.toLowerCase().includes(search.toLowerCase()) ||
       item.client_fullname?.toLowerCase().includes(search.toLowerCase()) ||
+      item.case_status?.toLowerCase().includes(search.toLowerCase()) ||
       formatDateTime(item.case_date_created).toLowerCase().includes(search.toLowerCase()) ||
       formatDateTime(item.case_last_updated).toLowerCase().includes(search.toLowerCase()) ||
       item.case_id.toString().includes(search);
@@ -158,16 +163,14 @@ const Archives = () => {
 
   // Refresh after case update from modal
   const handleCaseUpdated = (updatedCase) => {
-    setArchivedCases((prev) =>
-      prev.map((c) => (c.case_id === updatedCase.case_id ? updatedCase : c))
-    );
+    setArchivedCases((prev) => prev.map((c) => (c.case_id === updatedCase.case_id ? updatedCase : c)));
   };
 
   return (
     <div className="mx-auto">
       <div className="mb-6">
         <h2 className="title">Archived Cases</h2>
-        <p className="text-sm dark:text-slate-300">Browse and search all archived cases.</p>
+        <p className="text-sm text-gray-500">Browse and search all archived cases.</p>
       </div>
 
       {/* Search and Filter */}
@@ -210,7 +213,17 @@ const Archives = () => {
                   key={item.case_id}
                   className="border-t border-gray-200 transition hover:bg-blue-100 dark:border-gray-700 dark:hover:bg-blue-950"
                 >
-                  <td className="px-4 py-3">{item.case_id}</td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`mr-2 inline-block h-3 w-3 rounded-full ${item.case_status === "Archived (Completed)"
+                          ? "bg-green-500"
+                          : item.case_status === "Archived (Dismissed)"
+                            ? "bg-gray-400"
+                            : "bg-red-500"
+                        }`}
+                    ></span>
+                    {item.case_id}
+                  </td>
                   <td className="px-4 py-3">{item.ct_name}</td>
                   <td className="px-4 py-3">{item.client_fullname}</td>
                   {user.user_role === "Admin" && <td className="px-4 py-3">Atty. {getLawyerFullName(item.user_id)}</td>}
@@ -244,6 +257,18 @@ const Archives = () => {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Legend */}
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2">
+          <span className="inline-block h-3 w-3 rounded-full bg-green-500" />
+          <span className="text-xs text-slate-500 dark:text-slate-300">Completed Case</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="inline-block h-3 w-3 rounded-full bg-gray-400" />
+          <span className="text-xs text-slate-500 dark:text-slate-300">Dismissed Case</span>
+        </div>
       </div>
 
       {/* Filter Modal */}

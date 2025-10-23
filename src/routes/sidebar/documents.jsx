@@ -2,8 +2,6 @@ import { useState, useEffect } from "react";
 import { Download, Trash2, FileText, Search, Filter, X } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 
-const roles = ["All", "Support", "Task"];
-
 const Documents = () => {
     const { user } = useAuth();
 
@@ -94,7 +92,7 @@ const Documents = () => {
             doc.doc_type,
             doc.doc_tag,
             String(doc.case_id ?? ""),
-            String(doc.doc_submitted_by ?? ""),
+            getSubmitterName(doc.doc_submitted_by),
             String(doc.doc_tasked_by ?? ""),
         ].map((v) => String(v || "").toLowerCase());
         return fields.some((f) => f.includes(term));
@@ -124,30 +122,6 @@ const Documents = () => {
                 </div>
             </div>
 
-            {/* Tabs: All | Support | Task */}
-            <div className="flex flex-wrap gap-2">
-                {roles.map((r) => {
-                    const isActive =
-                        (r === "All" && (search === "" || !["support", "task"].includes(search.toLowerCase()))) ||
-                        search.toLowerCase() === r.toLowerCase();
-                    return (
-                        <button
-                            key={r}
-                            onClick={() => {
-                                setCurrentPage(1);
-                                setSearch(r === "All" ? "" : r);
-                            }}
-                            className={`rounded-full px-4 py-2 text-sm font-medium
-          ${isActive
-                                    ? "border-none bg-blue-600 text-white"
-                                    : "bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-slate-200"}`}
-                        >
-                            {r}
-                        </button>
-                    );
-                })}
-            </div>
-
             {/* Search Input */}
             <div className="card shadow-md">
                 <div className="focus:ring-0.5 flex flex-grow items-center gap-2 rounded-md border border-gray-300 bg-transparent px-3 py-2 focus-within:border-blue-600 focus-within:ring-blue-400 dark:border-slate-600 dark:focus-within:border-blue-600">
@@ -174,6 +148,7 @@ const Documents = () => {
                             <th className="px-4 py-3">Name</th>
                             <th className="px-4 py-3">Case ID</th>
                             <th className="px-4 py-3">Type</th>
+                            <th className="px-4 py-3">Date Submitted</th>
                             <th className="px-4 py-3">Submitted By</th>
                             <th className="px-4 py-3 text-center">Actions</th>
                         </tr>
@@ -200,6 +175,11 @@ const Documents = () => {
                                         <td className="flex items-center gap-2 px-4 py-4 font-medium text-blue-800">{doc.doc_name || "Untitled"}</td>
                                         <td className="px-4 py-3">{doc.case_id}</td>
                                         <td className="px-4 py-3">{doc.doc_type}</td>
+                                        <td className="px-4 py-3">
+                                            {doc.doc_type === "Support"
+                                                ? new Date(doc.doc_date_created).toLocaleDateString()
+                                                : new Date(doc.doc_date_submitted).toLocaleDateString()}
+                                        </td>
                                         <td className="px-4 py-3">{getSubmitterName(doc.doc_submitted_by)}</td>
                                         <td className="flex justify-center gap-4 px-4 py-3">
                                             <div className="flex items-center gap-3">

@@ -80,6 +80,7 @@ const Userlogs = () => {
     if (/updated contact/i.test(action)) return "Client Contact Update";
     if (/removed contact/i.test(action)) return "Client Contact Removed";
     if (/new case/i.test(action)) return "New Case Added";
+    if (/new allowed viewer/i.test(action)) return "Archive Access Granted";
     if (/archived/i.test(action)) return "Case Archived";
     if (/updated case/i.test(action)) return "Case Update";
     if (/task added/i.test(action)) return "New Task Added";

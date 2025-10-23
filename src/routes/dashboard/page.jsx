@@ -116,6 +116,11 @@ const DashboardPage = () => {
     useEffect(() => {
         const fetchAllDocumentCounts = async () => {
             try {
+                const pendingTaskUrl =
+                    user.user_role === "Admin"
+                        ? "http://localhost:3000/api/documents/count/pending-tasks"
+                        : `http://localhost:3000/api/documents/count/pending-tasks/${user.user_id}`;
+
                 const endpoints = [
                     {
                         url: "http://localhost:3000/api/documents/count/for-approval",
@@ -126,7 +131,7 @@ const DashboardPage = () => {
                         setter: setProcessingDocumentsCount,
                     },
                     {
-                        url: "http://localhost:3000/api/documents/count/pending-tasks",
+                        url: pendingTaskUrl,
                         setter: setPendingTasksCount,
                     },
                 ];
