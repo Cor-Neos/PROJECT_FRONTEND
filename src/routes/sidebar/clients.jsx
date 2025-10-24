@@ -66,7 +66,11 @@ const Client = () => {
     const getUserFullName = (userId) => {
         const user = users.find((u) => u.user_id === userId);
         return user
-            ? `${user.user_fname || ""} ${user.user_mname ? user.user_mname[0] + "." : ""} ${user.user_lname || ""}`.replace(/\s+/g, " ").trim()
+            ? user.user_role === "Admin" || user.user_role === "Lawyer"
+                ? `Atty. ${user.user_fname || ""} ${user.user_mname ? user.user_mname[0] + "." : ""} ${user.user_lname || ""}`
+                    .replace(/\s+/g, " ")
+                    .trim()
+                : `${user.user_fname || ""} ${user.user_mname ? user.user_mname[0] + "." : ""} ${user.user_lname || ""}`.replace(/\s+/g, " ").trim()
             : "Unknown";
     };
 
@@ -260,7 +264,7 @@ const Client = () => {
                             <th className="whitespace-nowrap px-4 py-3">Email</th>
                             <th className="whitespace-nowrap px-4 py-3">Phone</th>
                             <th className="whitespace-nowrap px-4 py-3">Date Created</th>
-                            <th className="whitespace-nowrap px-4 py-3">Created by</th>
+                            {user?.user_role !== "Lawyer" && <th className="whitespace-nowrap px-4 py-3">Lawyer</th>}
                             <th className="whitespace-nowrap px-4 py-3">Action</th>
                         </tr>
                     </thead>
@@ -285,7 +289,9 @@ const Client = () => {
                                     <td className="whitespace-nowrap px-4 py-3">{client.client_email}</td>
                                     <td className="whitespace-nowrap px-4 py-3">{client.client_phonenum}</td>
                                     <td className="whitespace-nowrap px-4 py-3">{new Date(client.client_date_created).toLocaleDateString()}</td>
-                                    <td className="whitespace-nowrap px-4 py-3">{getUserFullName(client.created_by)}</td>
+                                    {user?.user_role !== "Lawyer" && (
+                                        <td className="whitespace-nowrap px-4 py-3">{getUserFullName(client.user_id)}</td>
+                                    )}
                                     <td className="px-4 py-3">
                                         <div className="flex flex-wrap items-center gap-2">
                                             <button
@@ -444,6 +450,11 @@ const Client = () => {
                                         </span>
                                     </p>
                                 </div>
+                            </div>
+
+                            <div>
+                                <p className="font-semibold dark:text-blue-700">Lawyer</p>
+                                <p className="text-gray-600 dark:text-slate-200">{getUserFullName(viewClient.user_id)}</p>
                             </div>
 
                             <div>
