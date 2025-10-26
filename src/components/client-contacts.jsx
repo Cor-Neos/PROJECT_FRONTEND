@@ -350,12 +350,26 @@ export default ClientContact;
 const EditContactModal = ({ contact, onClose, onSave, clients = [] }) => {
   const { user } = useAuth();
 
-  const [formData, setFormData] = useState(contact || {});
+  // Helper to split a full name into first, middle, last
+  const splitName = (fullName = "") => {
+    const parts = fullName.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return ["", "", ""];
+    if (parts.length === 1) return [parts[0], "", ""];
+    if (parts.length === 2) return [parts[0], "", parts[1]];
+    return [parts[0], parts.slice(1, -1).join(" "), parts[parts.length - 1]];
+  };
+
+  const [formData, setFormData] = useState(() => {
+    const initial = contact || {};
+    const [firstName, middleName, lastName] = splitName(initial.contact_fullname || "");
+    return { ...initial, firstName, middleName, lastName };
+  });
 
   // Sync when contact prop changes
   useEffect(() => {
     if (contact) {
-      setFormData(contact);
+      const [firstName, middleName, lastName] = splitName(contact.contact_fullname || "");
+      setFormData({ ...contact, firstName, middleName, lastName });
     }
   }, [contact]);
 
@@ -368,13 +382,20 @@ const EditContactModal = ({ contact, onClose, onSave, clients = [] }) => {
     const toastId = toast.loading("Updating contact...");
 
     try {
-      const res = await fetch(`http://localhost:3000/api/client-contacts/${formData.contact_id}`, {
+      const { firstName, middleName, lastName, ...rest } = formData;
+      const contact_fullname = [firstName, middleName, lastName]
+        .filter(Boolean)
+        .join(" ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      const res = await fetch(`http://localhost:3000/api/client-contacts/${rest.contact_id}`, {
         method: "PUT",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ ...formData, contact_updated_by: user.user_id }),
+        body: JSON.stringify({ ...rest, contact_fullname, contact_updated_by: user.user_id }),
       });
 
       if (!res.ok) {
@@ -404,13 +425,30 @@ const EditContactModal = ({ contact, onClose, onSave, clients = [] }) => {
       <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-md dark:bg-slate-800">
         <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">Edit Contact</h2>
         <div className="space-y-3">
-          <input
-            name="contact_fullname"
-            value={formData.contact_fullname || ""}
-            onChange={handleChange}
-            className="w-full rounded border px-3 py-2 dark:bg-slate-700 dark:text-slate-50"
-            placeholder="Full Name"
-          />
+          {/* Name fields split */}
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 ">
+            <input
+              name="firstName"
+              value={formData.firstName || ""}
+              onChange={handleChange}
+              className="w-full rounded border px-3 py-2 dark:bg-slate-700 dark:text-slate-50"
+              placeholder="First Name"
+            />
+            <input
+              name="middleName"
+              value={formData.middleName || ""}
+              onChange={handleChange}
+              className="w-full rounded border px-2 py-2 dark:bg-slate-700 dark:text-slate-50"
+              placeholder="Middle Name (optional)"
+            />
+            <input
+              name="lastName"
+              value={formData.lastName || ""}
+              onChange={handleChange}
+              className="w-full rounded border px-3 py-2 dark:bg-slate-700 dark:text-slate-50"
+              placeholder="Last Name"
+            />
+          </div>
           <input
             name="contact_email"
             value={formData.contact_email || ""}
@@ -439,17 +477,11 @@ const EditContactModal = ({ contact, onClose, onSave, clients = [] }) => {
             required
             className="w-full rounded-lg border px-3 py-2 dark:bg-slate-700 dark:text-slate-50"
           >
-            <option
-              value=""
-              disabled
-            >
+            <option value="" disabled>
               Select Client
             </option>
             {clients.map((client) => (
-              <option
-                key={client.client_id}
-                value={client.client_id}
-              >
+              <option key={client.client_id} value={client.client_id}>
                 {client.client_fullname}
               </option>
             ))}

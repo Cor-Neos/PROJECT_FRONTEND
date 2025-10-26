@@ -602,8 +602,8 @@ const Settings = () => {
                             key={tab.key}
                             onClick={() => setActiveTab(tab.key)}
                             className={`group relative flex items-center gap-3 rounded-md border px-4 py-2 text-sm font-medium transition-colors ${activeTab === tab.key
-                                    ? "border-blue-500/60 bg-blue-600 text-white shadow-lg shadow-blue-500/20"
-                                    : "border-transparent text-gray-700 hover:bg-blue-50 hover:text-blue-700 dark:text-gray-300 dark:hover:bg-gray-800/80"
+                                ? "border-blue-500/60 bg-blue-600 text-white shadow-lg shadow-blue-500/20"
+                                : "border-transparent text-gray-700 hover:bg-blue-50 hover:text-blue-700 dark:text-gray-300 dark:hover:bg-gray-800/80"
                                 } `}
                         >
                             <tab.icon size={18} />
@@ -988,7 +988,7 @@ const Settings = () => {
                     </div>
                 )}
 
-                {/* Case Preferences */}
+                {/* Case Categories and its Subtypes*/}
                 {activeTab === "case-categories" && (
                     <div className="mx-auto max-w-6xl space-y-6">
                         <SettingsCard
@@ -1051,7 +1051,7 @@ const Settings = () => {
                                             onChange={(e) => setNewTypeCategoryId(e.target.value)}
                                             className="rounded-lg border px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 sm:w-64"
                                         >
-                                            <option value="">No category (optional)</option>
+                                            <option value="" disabled>Select Category</option>
                                             {categories.map((c) => (
                                                 <option
                                                     key={c.cc_id ?? c.id}
@@ -1063,7 +1063,7 @@ const Settings = () => {
                                         </select>
                                         <button
                                             type="submit"
-                                            disabled={!newTypeName.trim() || addTypeLoading}
+                                            disabled={!newTypeName.trim() || addTypeLoading || !newTypeCategoryId}
                                             className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                                         >
                                             {addTypeLoading ? (

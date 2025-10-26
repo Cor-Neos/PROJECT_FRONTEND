@@ -59,6 +59,10 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
         doc_last_updated_by: user.user_id,
     });
 
+    // local file state for optional replacement
+    const [file, setFile] = useState(null);
+    const [fileError, setFileError] = useState("");
+
     const onTaskChange = (e) => {
         const { name, value } = e.target;
         setTaskForm((prev) => ({ ...prev, [name]: value }));
@@ -81,22 +85,59 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
         setTaskForm((prev) => ({ ...prev, doc_prio_level: value, doc_due_date: due }));
     };
 
+    const handleFileChange = (e) => {
+        const selected = e.target.files?.[0];
+        if (!selected) return;
+        if (selected.size > 10 * 1024 * 1024) {
+            setFileError("File size must be 10MB or less.");
+            setFile(null);
+            e.target.value = null;
+            return;
+        }
+        if (selected.type !== "application/pdf") {
+            setFileError("Only PDF files are allowed.");
+            setFile(null);
+            e.target.value = null;
+            return;
+        }
+        setFile(selected);
+        setFileError("");
+    };
+
+    const removeFile = () => {
+        setFile(null);
+        setFileError("");
+    };
+
     const submitTask = async () => {
         const toastId = toast.loading("Saving changes...", { duration: 4000 });
         try {
-            const payload = { ...taskForm };
-
-            if (!payload.doc_password) delete payload.doc_password;
-
-            const res = await fetch(`http://localhost:3000/api/documents/${doc.doc_id}`, {
-                method: "PUT",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
+            // If replacing file, use multipart; else JSON
+            let res;
+            if (file) {
+                const fd = new FormData();
+                Object.entries(taskForm).forEach(([k, v]) => {
+                    if (v !== undefined && v !== null) fd.append(k, v);
+                });
+                fd.append("doc_file", file);
+                res = await fetch(`http://localhost:3000/api/documents/${doc.doc_id}`, {
+                    method: "PUT",
+                    credentials: "include",
+                    body: fd,
+                });
+            } else {
+                const payload = { ...taskForm };
+                if (!payload.doc_password) delete payload.doc_password;
+                res = await fetch(`http://localhost:3000/api/documents/${doc.doc_id}`, {
+                    method: "PUT",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+            }
 
             const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.error || "Failed to update document");
+            if (!res.ok) throw new Error(data.error || data.message || "Failed to update document");
 
             toast.success("Task document updated", { id: toastId, duration: 3000 });
             if (onSaved) onSaved();
@@ -109,19 +150,32 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
     const submitSupport = async () => {
         const toastId = toast.loading("Saving changes...", { duration: 4000 });
         try {
-            const payload = { ...supportForm };
-
-            if (!payload.doc_password) delete payload.doc_password;
-            if (user?.user_id) payload.doc_submitted_by = user.user_id;
-
-            const res = await fetch(`http://localhost:3000/api/documents/${doc.doc_id}`, {
-                method: "PUT",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
+            let res;
+            if (file) {
+                const fd = new FormData();
+                Object.entries(supportForm).forEach(([k, v]) => {
+                    if (v !== undefined && v !== null) fd.append(k, v);
+                });
+                if (user?.user_id) fd.append("doc_submitted_by", user.user_id);
+                fd.append("doc_file", file);
+                res = await fetch(`http://localhost:3000/api/documents/${doc.doc_id}`, {
+                    method: "PUT",
+                    credentials: "include",
+                    body: fd,
+                });
+            } else {
+                const payload = { ...supportForm };
+                if (!payload.doc_password) delete payload.doc_password;
+                if (user?.user_id) payload.doc_submitted_by = user.user_id;
+                res = await fetch(`http://localhost:3000/api/documents/${doc.doc_id}`, {
+                    method: "PUT",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+            }
             const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.error || "Failed to update document");
+            if (!res.ok) throw new Error(data.error || data.message || "Failed to update document");
 
             toast.success("Document updated", { id: toastId, duration: 4000 });
             if (onSaved) onSaved();
@@ -309,6 +363,30 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
                             </div>
                         </div>
 
+                        {/* Replace file */}
+                        <div className="flex flex-col">
+                            <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Replace Attached File (PDF)</label>
+                            <input
+                                type="file"
+                                accept="application/pdf"
+                                onChange={handleFileChange}
+                                className="rounded border px-3 py-2 dark:border-gray-600 dark:bg-slate-800 dark:text-white"
+                            />
+                            {fileError && <p className="mt-1 text-sm text-red-600">{fileError}</p>}
+                            {file && (
+                                <div className="mt-2 flex items-center justify-between rounded border px-2 py-1 text-sm dark:border-gray-600">
+                                    <span>📄 {file.name}</span>
+                                    <button type="button" onClick={removeFile} className="ml-2 text-red-500 hover:text-red-700">❌</button>
+                                </div>
+                            )}
+                            {!file && doc.doc_file && (
+                                <p className="mt-1 text-sm">
+                                    Current file: {" "}
+                                    <a className="text-blue-600 hover:underline" href={`http://localhost:3000${doc.doc_file}`} target="_blank" rel="noreferrer">View</a>
+                                </p>
+                            )}
+                        </div>
+
                         <div className="md:col-span-2">
                             <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Task Description <span className="text-red-500">*</span>
@@ -381,6 +459,30 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
                                     className="rounded border px-3 py-2 dark:border-gray-600 dark:bg-slate-800 dark:text-white"
                                 />
                             </div>
+                        </div>
+
+                        {/* Replace file for Support */}
+                        <div className="flex flex-col">
+                            <label className="mb-1 text-sm font-medium">Replace Attached File (PDF)</label>
+                            <input
+                                type="file"
+                                accept="application/pdf"
+                                onChange={handleFileChange}
+                                className="rounded border px-3 py-2 dark:border-gray-600 dark:bg-slate-800 dark:text-white"
+                            />
+                            {fileError && <p className="mt-1 text-sm text-red-600">{fileError}</p>}
+                            {file && (
+                                <div className="mt-2 flex items-center justify-between rounded border px-2 py-1 text-sm dark:border-gray-600">
+                                    <span>📄 {file.name}</span>
+                                    <button type="button" onClick={removeFile} className="ml-2 text-red-500 hover:text-red-700">❌</button>
+                                </div>
+                            )}
+                            {!file && doc.doc_file && (
+                                <p className="mt-1 text-sm">
+                                    Current file: {" "}
+                                    <a className="text-blue-600 hover:underline" href={`http://localhost:3000${doc.doc_file}`} target="_blank" rel="noreferrer">View</a>
+                                </p>
+                            )}
                         </div>
 
                         <div className="col-span-2">
