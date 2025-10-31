@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import toast from "react-hot-toast";
@@ -47,6 +47,7 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
         doc_status: doc.doc_status || "todo",
         case_id: doc.case_id,
         doc_last_updated_by: user.user_id,
+        doc_reference: doc.doc_reference || [],
     });
 
     const [supportForm, setSupportForm] = useState({
@@ -57,11 +58,36 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
         doc_type: "Support",
         case_id: doc.case_id,
         doc_last_updated_by: user.user_id,
+        doc_file: doc.doc_file || "",
     });
 
-    // local file state for optional replacement
-    const [file, setFile] = useState(null);
-    const [fileError, setFileError] = useState("");
+    // --- New: File handling state ---
+    // Task references: keep existing reference URLs and allow adding new PDF files
+    const [existingRefs, setExistingRefs] = useState([]);
+    const [newRefFiles, setNewRefFiles] = useState([]); // File[]
+    const [refFileError, setRefFileError] = useState("");
+
+    // Support single main file replacement
+    const [newMainFile, setNewMainFile] = useState(null); // File | null
+    const [mainFileError, setMainFileError] = useState("");
+
+    useEffect(() => {
+        // Parse doc_reference which may be JSON string or array
+        let refs = [];
+        if (doc.doc_reference) {
+            try {
+                if (typeof doc.doc_reference === "string") {
+                    const parsed = JSON.parse(doc.doc_reference);
+                    if (Array.isArray(parsed)) refs = parsed;
+                } else if (Array.isArray(doc.doc_reference)) {
+                    refs = doc.doc_reference;
+                }
+            } catch (e) {
+                console.error("Failed to parse doc_reference", e);
+            }
+        }
+        setExistingRefs(refs);
+    }, [doc.doc_reference]);
 
     const onTaskChange = (e) => {
         const { name, value } = e.target;
@@ -85,59 +111,92 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
         setTaskForm((prev) => ({ ...prev, doc_prio_level: value, doc_due_date: due }));
     };
 
-    const handleFileChange = (e) => {
-        const selected = e.target.files?.[0];
-        if (!selected) return;
-        if (selected.size > 10 * 1024 * 1024) {
-            setFileError("File size must be 10MB or less.");
-            setFile(null);
+    // --- New: file handlers ---
+    const onAddRefFiles = (e) => {
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
+        const oversized = files.some((f) => f.size > 10 * 1024 * 1024);
+        if (oversized) {
+            setRefFileError("Each file must be 10MB or less.");
             e.target.value = null;
             return;
         }
-        if (selected.type !== "application/pdf") {
-            setFileError("Only PDF files are allowed.");
-            setFile(null);
-            e.target.value = null;
-            return;
-        }
-        setFile(selected);
-        setFileError("");
+        setNewRefFiles((prev) => [...prev, ...files]);
+        setRefFileError("");
+        e.target.value = null;
     };
 
-    const removeFile = () => {
-        setFile(null);
-        setFileError("");
+    const removeNewRefAt = (idx) => {
+        setNewRefFiles((prev) => prev.filter((_, i) => i !== idx));
     };
+
+    // Actual removal of existing reference
+    const removeExistingRefAt = async (idx) => {
+        const onConfirm = window.confirm("Are you sure you want to remove this reference file from the document?");
+        if (!onConfirm) return;
+
+        if (onConfirm) {
+            const toastId = toast.loading("Removing file reference...", { duration: 3000 });
+            try {
+                const refToRemove = existingRefs[idx];
+                setExistingRefs((prev) => prev.filter((_, i) => i !== idx));
+
+                // Make backend call
+                const res = await fetch(`http://localhost:3000/api/documents/${doc.doc_id}/remove-reference`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({ referencePath: refToRemove }),
+                });
+
+                console.log("refToRemove", refToRemove, typeof refToRemove);
+
+                if (!res.ok) {
+                    throw new Error("Failed to remove reference from server");
+                }
+
+                toast.success("Reference removed successfully", { id: toastId, duration: 3000 });
+            } catch (err) {
+                console.error("Failed to remove reference", err);
+                toast.error(err.message || "Failed to remove reference", { id: toastId, duration: 3000 });
+            }
+        }
+    };
+
+    const onMainFileChange = (e) => {
+        const f = e.target.files?.[0];
+        if (!f) return;
+        if (f.size > 10 * 1024 * 1024) {
+            setMainFileError("File size must be 10MB or less.");
+            e.target.value = null;
+            return;
+        }
+        setNewMainFile(f);
+        setMainFileError("");
+    };
+    const clearMainFile = () => setNewMainFile(null);
 
     const submitTask = async () => {
         const toastId = toast.loading("Saving changes...", { duration: 4000 });
         try {
-            // If replacing file, use multipart; else JSON
-            let res;
-            if (file) {
-                const fd = new FormData();
-                Object.entries(taskForm).forEach(([k, v]) => {
-                    if (v !== undefined && v !== null) fd.append(k, v);
-                });
-                fd.append("doc_file", file);
-                res = await fetch(`http://localhost:3000/api/documents/${doc.doc_id}`, {
-                    method: "PUT",
-                    credentials: "include",
-                    body: fd,
-                });
-            } else {
-                const payload = { ...taskForm };
-                if (!payload.doc_password) delete payload.doc_password;
-                res = await fetch(`http://localhost:3000/api/documents/${doc.doc_id}`, {
-                    method: "PUT",
-                    credentials: "include",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload),
-                });
-            }
+            // Always use FormData so we can support files and normal fields
+            const fd = new FormData();
+            Object.entries(taskForm).forEach(([k, v]) => {
+                if (v !== undefined && v !== null) fd.append(k, v);
+            });
+            // Keep list for existing references after removals
+            fd.append("doc_reference", JSON.stringify(existingRefs));
+            // Newly added reference files
+            newRefFiles.forEach((f) => fd.append("doc_reference", f));
+
+            const res = await fetch(`http://localhost:3000/api/documents/${doc.doc_id}`, {
+                method: "PUT",
+                credentials: "include",
+                body: fd,
+            });
 
             const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.error || data.message || "Failed to update document");
+            if (!res.ok) throw new Error(data.error || "Failed to update document");
 
             toast.success("Task document updated", { id: toastId, duration: 3000 });
             if (onSaved) onSaved();
@@ -150,32 +209,21 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
     const submitSupport = async () => {
         const toastId = toast.loading("Saving changes...", { duration: 4000 });
         try {
-            let res;
-            if (file) {
-                const fd = new FormData();
-                Object.entries(supportForm).forEach(([k, v]) => {
-                    if (v !== undefined && v !== null) fd.append(k, v);
-                });
-                if (user?.user_id) fd.append("doc_submitted_by", user.user_id);
-                fd.append("doc_file", file);
-                res = await fetch(`http://localhost:3000/api/documents/${doc.doc_id}`, {
-                    method: "PUT",
-                    credentials: "include",
-                    body: fd,
-                });
-            } else {
-                const payload = { ...supportForm };
-                if (!payload.doc_password) delete payload.doc_password;
-                if (user?.user_id) payload.doc_submitted_by = user.user_id;
-                res = await fetch(`http://localhost:3000/api/documents/${doc.doc_id}`, {
-                    method: "PUT",
-                    credentials: "include",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload),
-                });
-            }
+            // Use FormData to support optional main file replacement
+            const fd = new FormData();
+            Object.entries(supportForm).forEach(([k, v]) => {
+                if (v !== undefined && v !== null) fd.append(k, v);
+            });
+            if (user?.user_id) fd.append("doc_submitted_by", user.user_id);
+            if (newMainFile) fd.append("doc_file", newMainFile);
+
+            const res = await fetch(`http://localhost:3000/api/documents/${doc.doc_id}`, {
+                method: "PUT",
+                credentials: "include",
+                body: fd,
+            });
             const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.error || data.message || "Failed to update document");
+            if (!res.ok) throw new Error(data.error || "Failed to update document");
 
             toast.success("Document updated", { id: toastId, duration: 4000 });
             if (onSaved) onSaved();
@@ -363,30 +411,6 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
                             </div>
                         </div>
 
-                        {/* Replace file */}
-                        <div className="flex flex-col">
-                            <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Replace Attached File (PDF)</label>
-                            <input
-                                type="file"
-                                accept="application/pdf"
-                                onChange={handleFileChange}
-                                className="rounded border px-3 py-2 dark:border-gray-600 dark:bg-slate-800 dark:text-white"
-                            />
-                            {fileError && <p className="mt-1 text-sm text-red-600">{fileError}</p>}
-                            {file && (
-                                <div className="mt-2 flex items-center justify-between rounded border px-2 py-1 text-sm dark:border-gray-600">
-                                    <span>📄 {file.name}</span>
-                                    <button type="button" onClick={removeFile} className="ml-2 text-red-500 hover:text-red-700">❌</button>
-                                </div>
-                            )}
-                            {!file && doc.doc_file && (
-                                <p className="mt-1 text-sm">
-                                    Current file: {" "}
-                                    <a className="text-blue-600 hover:underline" href={`http://localhost:3000${doc.doc_file}`} target="_blank" rel="noreferrer">View</a>
-                                </p>
-                            )}
-                        </div>
-
                         <div className="md:col-span-2">
                             <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Task Description <span className="text-red-500">*</span>
@@ -399,6 +423,66 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
                                 className="w-full resize-none rounded-lg border px-3 py-2 dark:border-gray-600 dark:bg-slate-700 dark:text-white"
                                 required
                             />
+                        </div>
+
+                        {/* New: Reference Files (same design as Add Task) */}
+                        <div className="flex flex-col">
+                            <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">File References (PDF)</label>
+                            {/* Existing references */}
+                            <ul className="mb-2 space-y-1 text-sm text-gray-700 dark:text-gray-300">
+                                {existingRefs.length > 0 &&
+                                    existingRefs.map((url, idx) => (
+                                        <li
+                                            key={idx}
+                                            className="flex items-center justify-between rounded border px-2 py-1 dark:border-gray-600"
+                                        >
+                                            <a
+                                                className="text-blue-600 hover:underline"
+                                                href={`http://localhost:3000${url}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                            >
+                                                📄 {url.split("/").pop()}
+                                            </a>
+                                            <button
+                                                type="button"
+                                                onClick={() => removeExistingRefAt(idx)}
+                                                className="ml-2 text-red-500 hover:text-red-700"
+                                                title="Remove from document"
+                                            >
+                                                ❌
+                                            </button>
+                                        </li>
+                                    ))}
+                                {existingRefs.length === 0 && <li className="text-xs text-gray-500 dark:text-gray-400">No existing references.</li>}
+                            </ul>
+
+                            {/* Add more */}
+                            <input
+                                type="file"
+                                accept="application/pdf"
+                                multiple
+                                onChange={onAddRefFiles}
+                                className="rounded border px-3 py-2 dark:border-gray-600 dark:bg-slate-800 dark:text-white"
+                            />
+                            {refFileError && <p className="mt-1 text-sm text-red-600">{refFileError}</p>}
+                            <ul className="mt-2 space-y-1 text-sm text-gray-700 dark:text-gray-300">
+                                {newRefFiles.map((file, index) => (
+                                    <li
+                                        key={index}
+                                        className="flex items-center justify-between rounded border px-2 py-1 dark:border-gray-600"
+                                    >
+                                        <span>📄 {file.name}</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => removeNewRefAt(index)}
+                                            className="ml-2 text-red-500 hover:text-red-700"
+                                        >
+                                            ❌
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
 
                         <div className="flex justify-end gap-2">
@@ -461,30 +545,6 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
                             </div>
                         </div>
 
-                        {/* Replace file for Support */}
-                        <div className="flex flex-col">
-                            <label className="mb-1 text-sm font-medium">Replace Attached File (PDF)</label>
-                            <input
-                                type="file"
-                                accept="application/pdf"
-                                onChange={handleFileChange}
-                                className="rounded border px-3 py-2 dark:border-gray-600 dark:bg-slate-800 dark:text-white"
-                            />
-                            {fileError && <p className="mt-1 text-sm text-red-600">{fileError}</p>}
-                            {file && (
-                                <div className="mt-2 flex items-center justify-between rounded border px-2 py-1 text-sm dark:border-gray-600">
-                                    <span>📄 {file.name}</span>
-                                    <button type="button" onClick={removeFile} className="ml-2 text-red-500 hover:text-red-700">❌</button>
-                                </div>
-                            )}
-                            {!file && doc.doc_file && (
-                                <p className="mt-1 text-sm">
-                                    Current file: {" "}
-                                    <a className="text-blue-600 hover:underline" href={`http://localhost:3000${doc.doc_file}`} target="_blank" rel="noreferrer">View</a>
-                                </p>
-                            )}
-                        </div>
-
                         <div className="col-span-2">
                             <label className="mb-1 text-sm font-medium">
                                 Description <span className="text-red-500">*</span>
@@ -496,6 +556,49 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
                                 rows={2}
                                 className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm dark:bg-slate-800"
                             />
+                        </div>
+
+                        {/* the main file (support document) */}
+                        <div className="flex flex-col">
+                            <label className="mb-1 text-sm font-medium">File (PDF)</label>
+                            {/* Current file */}
+                            <div className="mb-2 flex items-center justify-between rounded border px-2 py-1 text-sm dark:border-gray-600">
+                                <a
+                                    className="text-blue-600 hover:underline"
+                                    href={`http://localhost:3000${doc.doc_file}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                >
+                                    Current: 📄 {doc.doc_file.split("/").pop()}
+                                </a>
+                                <button
+                                    type="button"
+                                    onClick={clearMainFile}
+                                    className="ml-2 text-red-500 hover:text-red-700"
+                                    title="Remove selected new file"
+                                >
+                                    ❌
+                                </button>
+                            </div>
+                            <input
+                                type="file"
+                                accept="application/pdf"
+                                onChange={onMainFileChange}
+                                className="rounded border px-3 py-2 dark:border-gray-600 dark:bg-slate-800 dark:text-white"
+                            />
+                            {mainFileError && <p className="mt-1 text-sm text-red-600">{mainFileError}</p>}
+                            {newMainFile && (
+                                <div className="mt-2 flex items-center justify-between rounded border px-2 py-1 text-sm dark:border-gray-600">
+                                    <span>📄 {newMainFile.name}</span>
+                                    <button
+                                        type="button"
+                                        onClick={clearMainFile}
+                                        className="ml-2 text-red-500 hover:text-red-700"
+                                    >
+                                        ❌
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex justify-end gap-2">

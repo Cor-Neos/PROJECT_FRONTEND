@@ -82,6 +82,8 @@ const Userlogs = () => {
     if (/new case/i.test(action)) return "New Case Added";
     if (/new allowed viewer/i.test(action)) return "Archive Access Granted";
     if (/archived/i.test(action)) return "Case Archived";
+    if (/status: completed/i.test(action)) return "Case Closed / Completed";
+    if (/status: dismissed/i.test(action)) return "Case Dismissed";
     if (/updated case/i.test(action)) return "Case Update";
     if (/task added/i.test(action)) return "New Task Added";
     if (/task updated/i.test(action)) return "Task Update";

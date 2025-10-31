@@ -300,12 +300,12 @@ export const Tasks = () => {
                                                     </span>
                                                     <span
                                                         className={`inline-block h-2.5 w-2.5 rounded-full ${task.doc_prio_level === "High"
-                                                                ? "bg-red-500"
-                                                                : task.doc_prio_level === "Mid"
-                                                                    ? "bg-yellow-500"
-                                                                    : task.doc_prio_level === "Low"
-                                                                        ? "bg-blue-500"
-                                                                        : "bg-gray-400"
+                                                            ? "bg-red-500"
+                                                            : task.doc_prio_level === "Mid"
+                                                                ? "bg-yellow-500"
+                                                                : task.doc_prio_level === "Low"
+                                                                    ? "bg-blue-500"
+                                                                    : "bg-gray-400"
                                                             }`}
                                                     ></span>
                                                 </div>
@@ -319,8 +319,8 @@ export const Tasks = () => {
                                                             onClick={() => updateTaskStatus(task.doc_id, STATUS_IDS.TODO)}
                                                             disabled={task.doc_status === STATUS_IDS.TODO}
                                                             className={`rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-700 ${task.doc_status === STATUS_IDS.TODO
-                                                                    ? "cursor-not-allowed bg-slate-100 text-slate-400 dark:bg-slate-700/30 dark:text-slate-500"
-                                                                    : "bg-white text-slate-700 dark:bg-slate-700/40 dark:text-slate-200"
+                                                                ? "cursor-not-allowed bg-slate-100 text-slate-400 dark:bg-slate-700/30 dark:text-slate-500"
+                                                                : "bg-white text-slate-700 dark:bg-slate-700/40 dark:text-slate-200"
                                                                 }`}
                                                         >
                                                             To Do
@@ -329,8 +329,8 @@ export const Tasks = () => {
                                                             onClick={() => updateTaskStatus(task.doc_id, STATUS_IDS.INPROGRESS)}
                                                             disabled={task.doc_status === STATUS_IDS.INPROGRESS}
                                                             className={`rounded-md px-3 py-1.5 text-xs font-medium text-white ${task.doc_status === STATUS_IDS.INPROGRESS
-                                                                    ? "cursor-not-allowed bg-indigo-400"
-                                                                    : "bg-indigo-600 hover:bg-indigo-700"
+                                                                ? "cursor-not-allowed bg-indigo-400"
+                                                                : "bg-indigo-600 hover:bg-indigo-700"
                                                                 }`}
                                                         >
                                                             Progress
@@ -339,8 +339,8 @@ export const Tasks = () => {
                                                             onClick={() => updateTaskStatus(task.doc_id, STATUS_IDS.DONE)}
                                                             disabled={task.doc_status === STATUS_IDS.DONE}
                                                             className={`rounded-md px-3 py-1.5 text-xs font-medium text-white ${task.doc_status === STATUS_IDS.DONE
-                                                                    ? "cursor-not-allowed bg-emerald-400"
-                                                                    : "bg-emerald-600 hover:bg-emerald-700"
+                                                                ? "cursor-not-allowed bg-emerald-400"
+                                                                : "bg-emerald-600 hover:bg-emerald-700"
                                                                 }`}
                                                         >
                                                             Done

@@ -5,16 +5,6 @@ import { useNavigate } from "react-router-dom";
 import defaultAvatar from "../../assets/default-avatar.png";
 import { useAuth } from "../../context/auth-context.jsx";
 
-const data = [
-    { name: "Mon", Cases: 400, analytics: 240 },
-    { name: "Tue", Cases: 300, analytics: 139 },
-    { name: "Wed", Cases: 200, analytics: 980 },
-    { name: "Thu", Cases: 278, analytics: 390 },
-    { name: "Fri", Cases: 189, analytics: 480 },
-    { name: "Sat", Cases: 239, analytics: 380 },
-    { name: "Sun", Cases: 349, analytics: 430 },
-];
-
 const StatCard = ({ title, value, icon }) => (
     <div className="flex flex-col justify-between gap-2 rounded-lg bg-white p-4 shadow dark:bg-slate-900">
         <div className="flex items-center justify-between">
@@ -25,7 +15,7 @@ const StatCard = ({ title, value, icon }) => (
     </div>
 );
 
-const ChartPlaceholder = ({ title, dataKey }) => (
+const ChartPlaceholder = ({ title, chartData }) => (
     <div className="flex flex-col gap-3 rounded-lg bg-white p-4 shadow dark:bg-slate-900">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h3>
         <div className="h-[200px] w-full">
@@ -34,12 +24,12 @@ const ChartPlaceholder = ({ title, dataKey }) => (
                 height="100%"
             >
                 <AreaChart
-                    data={data}
+                    data={chartData}
                     margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                 >
                     <defs>
                         <linearGradient
-                            id="colorData"
+                            id="colorCompleted"
                             x1="0"
                             y1="0"
                             x2="0"
@@ -56,7 +46,26 @@ const ChartPlaceholder = ({ title, dataKey }) => (
                                 stopOpacity={0}
                             />
                         </linearGradient>
+                        <linearGradient
+                            id="colorDismissed"
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="1"
+                        >
+                            <stop
+                                offset="5%"
+                                stopColor="#ef4444"
+                                stopOpacity={0.8}
+                            />
+                            <stop
+                                offset="95%"
+                                stopColor="#ef4444"
+                                stopOpacity={0}
+                            />
+                        </linearGradient>
                     </defs>
+
                     <XAxis
                         dataKey="name"
                         stroke="#94a3b8"
@@ -67,15 +76,38 @@ const ChartPlaceholder = ({ title, dataKey }) => (
                         stroke="#e2e8f0"
                     />
                     <Tooltip />
+
+                    {/* Completed line */}
                     <Area
                         type="monotone"
-                        dataKey={dataKey}
+                        dataKey="Completed"
                         stroke="#3b82f6"
                         fillOpacity={1}
-                        fill="url(#colorData)"
+                        fill="url(#colorCompleted)"
+                        name="Completed"
+                    />
+
+                    {/* Dismissed line */}
+                    <Area
+                        type="monotone"
+                        dataKey="Dismissed"
+                        stroke="#ef4444"
+                        fillOpacity={1}
+                        fill="url(#colorDismissed)"
+                        name="Dismissed"
                     />
                 </AreaChart>
             </ResponsiveContainer>
+        </div>
+
+        {/* Simple legend */}
+        <div className="mt-2 flex justify-center gap-4 text-xs">
+            <div className="flex items-center gap-1 text-blue-600">
+                <span className="h-2 w-2 rounded-full bg-blue-600" /> Completed
+            </div>
+            <div className="flex items-center gap-1 text-red-600">
+                <span className="h-2 w-2 rounded-full bg-red-600" /> Dismissed
+            </div>
         </div>
     </div>
 );
@@ -106,12 +138,97 @@ export const Reports = () => {
         return null;
     }
 
+    // TEST DATA counts
+    const [lastWeekCount] = useState({
+        completed: [{ monday: 5, tuesday: 8, wednesday: 6, thursday: 10, friday: 7, saturday: 4, sunday: 9 }],
+        dismissed: [{ monday: 2, tuesday: 3, wednesday: 1, thursday: 4, friday: 2, saturday: 0, sunday: 3 }],
+    });
+
+    const [monthlyCount] = useState({
+        completed: [
+            {
+                january: 50,
+                february: 65,
+                march: 80,
+                april: 70,
+                may: 90,
+                june: 75,
+                july: 85,
+                august: 95,
+                september: 60,
+                october: 100,
+                november: 110,
+                december: 120,
+            },
+        ],
+        dismissed: [
+            {
+                january: 20,
+                february: 25,
+                march: 30,
+                april: 15,
+                may: 35,
+                june: 20,
+                july: 25,
+                august: 30,
+                september: 15,
+                october: 40,
+                november: 45,
+                december: 50,
+            },
+        ],
+    });
+
+    const [quarterlyCount] = useState({
+        completed: [{ q1: 200, q2: 250, q3: 300, q4: 350 }],
+        dismissed: [{ q1: 80, q2: 90, q3: 100, q4: 110 }],
+    });
+
+    // CHART STATE
+    const [chartType, setChartType] = useState("weekly");
+
+    const transformData = (dataObj, labelMap) =>
+        Object.entries(dataObj).map(([key, value]) => ({
+            name: labelMap[key] || key,
+            Completed: value.completed || value,
+            Dismissed: value.dismissed || 0,
+        }));
+
+    // generate chart data dynamically
+    const getChartData = () => {
+        if (chartType === "weekly") {
+            const completed = lastWeekCount.completed[0];
+            const dismissed = lastWeekCount.dismissed[0];
+            return Object.keys(completed).map((day) => ({
+                name: day.charAt(0).toUpperCase() + day.slice(1),
+                Completed: completed[day],
+                Dismissed: dismissed[day],
+            }));
+        } else if (chartType === "monthly") {
+            const completed = monthlyCount.completed[0];
+            const dismissed = monthlyCount.dismissed[0];
+            return Object.keys(completed).map((month) => ({
+                name: month.charAt(0).toUpperCase() + month.slice(1),
+                Completed: completed[month],
+                Dismissed: dismissed[month],
+            }));
+        } else if (chartType === "quarterly") {
+            const completed = quarterlyCount.completed[0];
+            const dismissed = quarterlyCount.dismissed[0];
+            return Object.keys(completed).map((q) => ({
+                name: q.toUpperCase(),
+                Completed: completed[q],
+                Dismissed: dismissed[q],
+            }));
+        }
+        return [];
+    };
+
+    const chartData = getChartData();
+
+    // Logs and counts (unchanged)
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
-    // remove toggle in favor of scrollable list
-    // const [showAll, setShowAll] = useState(false);
-
-    // Stat counts
     const [usersCount, setUsersCount] = useState(0);
     const [archivedCasesCount, setArchivedCasesCount] = useState(0);
     const [processingCasesCount, setProcessingCasesCount] = useState(0);
@@ -120,127 +237,19 @@ export const Reports = () => {
     useEffect(() => {
         const fetchLogs = async () => {
             try {
-                const res = await fetch("http://localhost:3000/api/user-logs", {
-                    method: "GET",
-                    credentials: "include",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                });
+                const res = await fetch("http://localhost:3000/api/user-logs", { method: "GET", credentials: "include" });
                 const data = await res.json();
-                setLogs(data);
+                const filtered = data.filter((log) => /status: completed|status: dismissed/i.test(log.user_log_action));
+                setLogs(filtered);
             } catch (err) {
                 console.error("Error fetching logs:", err);
             } finally {
                 setLoading(false);
             }
         };
-
         fetchLogs();
     }, []);
 
-    // Users count (Admins only)
-    useEffect(() => {
-        const fetchUserCount = async () => {
-            try {
-                const res = await fetch("http://localhost:3000/api/users/count", {
-                    method: "GET",
-                    credentials: "include",
-                });
-                if (!res.ok) throw new Error("Failed to fetch user count");
-                const data = await res.json();
-                setUsersCount(data.count ?? 0);
-            } catch (error) {
-                console.error("Failed to fetch user count:", error);
-                setUsersCount(0);
-            }
-        };
-        if (user?.user_role === "Admin") fetchUserCount();
-    }, [user]);
-
-    // Processing cases count (role-based)
-    useEffect(() => {
-        const fetchProcessingCasesCount = async () => {
-            try {
-                const endpoint =
-                    user?.user_role === "Admin" || user?.user_role === "Staff"
-                        ? "http://localhost:3000/api/cases/count/processing"
-                        : `http://localhost:3000/api/cases/count/processing/user/${user.user_id}`;
-                const res = await fetch(endpoint, { method: "GET", credentials: "include" });
-                if (!res.ok) throw new Error("Failed to fetch processing cases count");
-                const data = await res.json();
-                setProcessingCasesCount(data.count ?? 0);
-            } catch (error) {
-                console.error("Failed to fetch processing cases count:", error);
-                setProcessingCasesCount(0);
-            }
-        };
-        if (user) fetchProcessingCasesCount();
-    }, [user]);
-
-    // Archived cases count (role-based)
-    useEffect(() => {
-        const fetchArchivedCasesCount = async () => {
-            try {
-                const endpoint =
-                    user?.user_role === "Admin" || user?.user_role === "Staff"
-                        ? "http://localhost:3000/api/cases/count/archived"
-                        : `http://localhost:3000/api/cases/count/archived/user/${user.user_id}`;
-                const res = await fetch(endpoint, { method: "GET", credentials: "include" });
-                if (!res.ok) throw new Error("Failed to fetch archived cases count");
-                const data = await res.json();
-                setArchivedCasesCount(data.count ?? 0);
-            } catch (error) {
-                console.error("Failed to fetch archived cases count:", error);
-                setArchivedCasesCount(0);
-            }
-        };
-        if (user) fetchArchivedCasesCount();
-    }, [user]);
-
-    // Processing documents count
-    useEffect(() => {
-        const fetchProcessingDocumentsCount = async () => {
-            try {
-                const res = await fetch("http://localhost:3000/api/documents", { credentials: "include" });
-                if (!res.ok) throw new Error("Failed to load documents");
-                const data = await res.json();
-                const statuses = new Set(["processing", "in-progress", "to-do", "pending"]);
-                const count = (Array.isArray(data) ? data : []).filter((d) =>
-                    statuses.has(
-                        String(d.doc_status || "")
-                            .toLowerCase()
-                            .trim(),
-                    ),
-                ).length;
-                setProcessingDocumentsCount(count);
-            } catch (e) {
-                console.error("Failed to compute processing documents count:", e);
-                setProcessingDocumentsCount(0);
-            }
-        };
-        fetchProcessingDocumentsCount();
-    }, []);
-
-    // count processing documents
-    useEffect(() => {
-        const fetchProcessingDocumentsCount = async () => {
-            try {
-                const res = await fetch("http://localhost:3000/api/documents/count/processing", { credentials: "include" });
-                if (!res.ok) throw new Error("Failed to fetch processing documents count");
-                const data = await res.json();
-                setProcessingDocumentsCount(data.count ?? 0);
-            } catch (error) {
-                console.error("Failed to fetch processing documents count:", error);
-                setProcessingDocumentsCount(0);
-            }
-        };
-        fetchProcessingDocumentsCount();
-    }, []);
-
-    // only show first 5 logs if not expanded
-    // const visibleLogs = showAll ? logs : logs.slice(0, 5);
-    // scrollable list: show all logs
     const visibleLogs = logs;
 
     return (
@@ -291,89 +300,101 @@ export const Reports = () => {
                 />
             </div>
 
-            {/* Chart */}
+            {/* CHART SECTION */}
             <div className="relative rounded-xl bg-white p-6 shadow-md dark:bg-gray-800">
-                <span className="absolute right-4 top-4 z-10 rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">Last 7 Days</span>
+                {/* Toggle buttons */}
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                    {[
+                        { label: "Last 7 Days", value: "weekly" },
+                        { label: "Monthly", value: "monthly" },
+                        { label: "Quarterly", value: "quarterly" },
+                    ].map((btn) => (
+                        <button
+                            key={btn.value}
+                            onClick={() => setChartType(btn.value)}
+                            className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${chartType === btn.value
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                                }`}
+                        >
+                            {btn.label}
+                        </button>
+                    ))}
+                </div>
 
-                <div className="grid grid-cols-4 gap-6 lg:grid-cols-1">
+                <div className="grid grid-cols-1 gap-6">
                     <ChartPlaceholder
-                        title="Completed Cases"
-                        dataKey="Cases"
+                        title="Completed & Dismissed Cases"
+                        dataKey="Completed"
+                        chartData={chartData}
                     />
                 </div>
             </div>
 
-            {/* User Activity Logs */}
+            {/* Logs Table */}
             <div className="card p-4">
                 <div className="mb-3 flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">User Activity</h2>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">Completions and Dismissals</h2>
                     <button
                         onClick={() => navigate("/user-logs")}
-                        className="text-xl font-bold text-blue-800 hover:underline"
+                        className="text-lg font-bold text-blue-800 hover:underline"
                     >
-                        View all
+                        View All Logs
                     </button>
                 </div>
 
                 {loading ? (
                     <p className="text-center text-gray-500">Loading logs...</p>
                 ) : (
-                    <>
-                        <div className="max-h-80 w-full overflow-y-auto rounded-md border border-gray-200 dark:border-gray-700">
-                            <table className="w-full text-sm">
-                                <thead className="sticky top-0 bg-gray-100 text-left text-gray-600 dark:bg-gray-800">
-                                    <tr>
-                                        <th className="p-2">USER</th>
-                                        <th className="p-2">ACTION</th>
-                                        <th className="p-2">DATE</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {visibleLogs.map((log) => (
-                                        <tr
-                                            key={log.user_log_id}
-                                            className="border-b hover:bg-gray-50 dark:hover:bg-gray-700"
-                                        >
-                                            {/* USER */}
-                                            <td className="flex items-center gap-2 p-2">
-                                                {log.user_profile ? (
-                                                    <img
-                                                        src={`http://localhost:3000${log.user_profile}`}
-                                                        alt={log.user_fullname}
-                                                        className="h-8 w-8 rounded-full object-cover"
-                                                    />
-                                                ) : (
-                                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-400 text-xs font-bold text-white">
-                                                        {log.user_fullname?.charAt(0).toUpperCase()}
-                                                    </div>
-                                                )}
-                                                <span className="text-slate-900 dark:text-white">{log.user_fullname}</span>
-                                            </td>
-
-                                            {/* ACTION */}
-                                            <td className="p-2">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-medium text-gray-600 dark:text-gray-400">{log.user_log_action}</span>
-                                                    <span className="text-xs text-gray-500">{formatDistanceToNow(new Date(log.user_log_time))}</span>
+                    <div className="max-h-80 w-full overflow-y-auto rounded-md border border-gray-200 dark:border-gray-700">
+                        <table className="w-full text-sm">
+                            <thead className="sticky top-0 bg-gray-100 text-left text-gray-500 dark:bg-gray-800">
+                                <tr>
+                                    <th className="p-2">USER</th>
+                                    <th className="p-2">ACTION</th>
+                                    <th className="p-2">DATE</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {visibleLogs.map((log) => (
+                                    <tr
+                                        key={log.user_log_id}
+                                        className="border-b hover:bg-gray-50 dark:hover:bg-gray-700"
+                                    >
+                                        <td className="flex items-center gap-2 p-2">
+                                            {log.user_profile ? (
+                                                <img
+                                                    src={`http://localhost:3000${log.user_profile}` || defaultAvatar}
+                                                    alt={log.user_fullname}
+                                                    className="h-8 w-8 rounded-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-400 text-xs font-bold text-white">
+                                                    {log.user_fullname?.charAt(0).toUpperCase()}
                                                 </div>
-                                            </td>
-
-                                            {/* DATE */}
-                                            <td className="p-2 text-slate-700 dark:text-slate-300">
-                                                {log.user_log_time
-                                                    ? new Date(log.user_log_time).toLocaleString("en-US", {
-                                                          year: "numeric",
-                                                          month: "long",
-                                                          day: "numeric",
-                                                      })
-                                                    : ""}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </>
+                                            )}
+                                            <span className="text-slate-900 dark:text-white">{log.user_fullname}</span>
+                                        </td>
+                                        <td className="p-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-medium text-gray-600 dark:text-gray-400">{log.user_log_action}</span>
+                                                <span className="text-xs text-gray-500">{formatDistanceToNow(new Date(log.user_log_time))}</span>
+                                            </div>
+                                        </td>
+                                        <td className="p-2 text-slate-700 dark:text-slate-300">
+                                            {log.user_log_time
+                                                ? new Date(log.user_log_time).toLocaleString("en-US", {
+                                                    year: "numeric",
+                                                    month: "long",
+                                                    day: "numeric",
+                                                })
+                                                : ""}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </div>
         </div>
