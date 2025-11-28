@@ -1,6 +1,7 @@
 // Centralized API client
 // Minimal wrapper around fetch with base URL and JSON handling.
-const BASE_URL = import.meta.env?.VITE_API_BASE_URL || "https://mfphlwdn-3000.asse.devtunnels.ms/api";
+// Prefer same-origin '/api' during development to ensure cookies are sent.
+const BASE_URL = (import.meta.env?.VITE_API_BASE_URL ?? "/api");
 
 function buildUrl(path) {
   if (!path.startsWith("/")) path = "/" + path;
