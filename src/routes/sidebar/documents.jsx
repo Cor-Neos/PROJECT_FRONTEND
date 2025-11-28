@@ -35,8 +35,8 @@ const Documents = () => {
                 user.user_role === "Admin"
                     ? "http://localhost:3000/api/documents"
                     : user.user_role === "Lawyer"
-                        ? `http://localhost:3000/api/documents/lawyer/${user.user_id}`
-                        : `http://localhost:3000/api/documents/submitter/${user.user_id}`;
+                      ? `http://localhost:3000/api/documents/lawyer/${user.user_id}`
+                      : `http://localhost:3000/api/documents/submitter/${user.user_id}`;
 
             const res = await fetch(doc_endpoint, {
                 credentials: "include",
@@ -129,7 +129,7 @@ const Documents = () => {
         const u = users.find((x) => x.user_id === submittedById);
         if (!u) return String(submittedById);
         const m = u.user_mname ? `${u.user_mname[0]}.` : "";
-        if (u.user_role === "Staff") return `${u.user_fname} ${m} ${u.user_lname}`.replace(/\s+/g, " ").trim();
+        if (u.user_role === "Staff" || u.user_role === "Paralegal") return `${u.user_fname} ${m} ${u.user_lname}`.replace(/\s+/g, " ").trim();
         return `Atty. ${u.user_fname} ${m} ${u.user_lname}`.replace(/\s+/g, " ").trim();
     };
 

@@ -103,6 +103,7 @@ const Users = () => {
                 user_role: userToSuspend.user_role,
                 user_status: "Suspended",
                 branch_id: userToSuspend.branch_id,
+                user_last_updated_by: user.user_id,
             };
 
             const res = await fetch(`${API_BASE}/api/users/${userToSuspend.user_id}`, {
@@ -150,6 +151,7 @@ const Users = () => {
                     user_role: u.user_role,
                     user_status: "Active",
                     branch_id: u.branch_id,
+                    user_last_updated_by: user.user_id,
                 };
 
                 const res = await fetch(`${API_BASE}/api/users/${u.user_id}`, {
@@ -198,6 +200,7 @@ const Users = () => {
                 user_role: userToEdit.user_role,
                 user_status: userToEdit.user_status,
                 branch_id: userToEdit.branch_id,
+                user_last_updated_by: user.user_id,
             };
 
             const res = await fetch(`${API_BASE}/api/users/${userToEdit.user_id}`, {

@@ -60,7 +60,8 @@ const Userlogs = () => {
     const getTagColor = (action) => {
         if (/login/i.test(action)) return "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300";
         if (/logout/i.test(action)) return "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300";
-        if (/updated profile/i.test(action)) return "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300";
+        if (/User account update/i.test(action)) return "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300";
+        if (/Updated Profile Information/i.test(action)) return "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300";
         if (/client/i.test(action)) return "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300";
         if (/contact/i.test(action)) return "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300";
         if (/archived/i.test(action)) return "bg-slate-700 text-white dark:bg-white dark:text-black";
@@ -75,7 +76,8 @@ const Userlogs = () => {
     const getLogTag = (action) => {
         if (/login/i.test(action)) return "Login";
         if (/logout/i.test(action)) return "Logout";
-        if (/updated profile/i.test(action)) return "Profile Update";
+        if (/User account update/i.test(action)) return "User Update";
+        if (/Updated Profile Information/i.test(action)) return "User Update";
         if (/new client/i.test(action)) return "New Client Added";
         if (/new contact/i.test(action)) return "New Client Contact Added";
         if (/updated client/i.test(action)) return "Client Update";

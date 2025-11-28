@@ -5,8 +5,9 @@ import { DndContext } from "@dnd-kit/core";
 import toast from "react-hot-toast";
 import { useAuth } from "@/context/auth-context";
 import { useNavigate } from "react-router-dom";
+import RejectDocumentModal from "@/components/reject-document";
 
-export const Tasks = () => {
+const Tasks = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
 
@@ -185,6 +186,117 @@ export const Tasks = () => {
         updateTaskStatus(selectedTask.doc_id, STATUS_IDS.INPROGRESS);
     }, [selectedTask]);
 
+    const [pendingFile, setPendingFile] = useState(null); // holds the file object temporarily
+    const [pendingPreviewURL, setPendingPreviewURL] = useState(null); // blob preview URL
+
+    const handleTurnIn = async (taskId) => {
+        if (!pendingFile) return;
+
+        const toastId = toast.loading("Submitting file...");
+
+        try {
+            const now = new Date();
+            const formatted =
+                now.getFullYear() +
+                "-" +
+                String(now.getMonth() + 1).padStart(2, "0") +
+                "-" +
+                String(now.getDate()).padStart(2, "0") +
+                " " +
+                String(now.getHours()).padStart(2, "0") +
+                ":" +
+                String(now.getMinutes()).padStart(2, "0") +
+                ":" +
+                String(now.getSeconds()).padStart(2, "0") +
+                "." +
+                String(now.getMilliseconds()).padStart(3, "0") +
+                "000";
+
+            const formData = new FormData();
+            formData.append("doc_type", "Task");
+            formData.append("doc_file", pendingFile);
+            formData.append("doc_status", STATUS_IDS.DONE);
+            formData.append("doc_submitted_by", user.user_id);
+            formData.append("doc_date_submitted", formatted);
+            formData.append("doc_last_updated_by", user.user_id);
+
+            const res = await fetch(`http://localhost:3000/api/documents/${taskId}`, {
+                method: "PUT",
+                body: formData,
+                credentials: "include",
+            });
+
+            if (!res.ok) throw new Error("Upload failed");
+
+            const updatedDoc = await res.json();
+
+            // update UI
+            setTasks((prev) => prev.map((t) => (t.doc_id === taskId ? updatedDoc : t)));
+            setSelectedTask(updatedDoc);
+
+            toast.success("Task submitted! Wait for approval.", { id: toastId, duration: 7000 });
+
+            setPendingFile(null);
+            setPendingPreviewURL(null);
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to upload", { id: toastId });
+        }
+    };
+
+    const closeModal = () => {
+        setPendingFile(null);
+        setPendingPreviewURL(null);
+        setSelectedTask(null);
+    };
+
+    // Add state for reject modal
+    const [showRejectModal, setShowRejectModal] = useState(false);
+
+    // Approve task function
+    const approveTask = async (taskId) => {
+        const toastId = toast.loading("Approving task...", { duration: 4000 });
+        try {
+            const payload = {
+                doc_status: "approved",
+                doc_last_updated_by: user.user_id,
+            };
+
+            const res = await fetch(`http://localhost:3000/api/documents/${taskId}`, {
+                method: "PUT",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || "Failed to approve task");
+
+            // Update local state
+            setTasks((prev) => prev.map((t) => (t.doc_id === taskId ? { ...t, doc_status: "approved" } : t)));
+            setSelectedTask((prev) => prev ? { ...prev, doc_status: "approved" } : prev);
+
+            toast.success("Task approved successfully", { id: toastId, duration: 3000 });
+        } catch (err) {
+            console.error("Approve task failed", err);
+            toast.error(err.message || "Approve failed", { id: toastId, duration: 4000 });
+        }
+    };
+
+    // Reject task function - opens modal
+    const rejectTask = () => {
+        setShowRejectModal(true);
+    };
+
+    // Handle task rejection
+    const handleTaskRejected = () => {
+        // Update local state when task is rejected
+        setTasks((prev) => prev.map((t) => (t.doc_id === selectedTask.doc_id ? { ...t, doc_status: "todo" } : t)));
+        setSelectedTask((prev) => prev ? { ...prev, doc_status: "todo" } : prev);
+        setShowRejectModal(false);
+    };
+
+    // 
+
     return (
         <div className="space-y-5">
             {/* Header */}
@@ -282,10 +394,10 @@ export const Tasks = () => {
                                                     {task.doc_status === "todo"
                                                         ? "To Do"
                                                         : task.doc_status === "in_progress"
-                                                          ? "In Progress"
-                                                          : task.doc_status === "done"
-                                                            ? "Done"
-                                                            : task.doc_status}
+                                                            ? "In Progress"
+                                                            : task.doc_status === "done"
+                                                                ? "Done"
+                                                                : task.doc_status}
                                                 </td>
                                                 <td className="px-4 py-3 text-slate-700 dark:text-slate-200">
                                                     {getUserFullName(task.doc_tasked_to) || "-"}
@@ -358,10 +470,10 @@ export const Tasks = () => {
                                                 {task.doc_status === "todo"
                                                     ? "To Do"
                                                     : task.doc_status === "in_progress"
-                                                      ? "In Progress"
-                                                      : task.doc_status === "done"
-                                                        ? "Done"
-                                                        : task.doc_status}
+                                                        ? "In Progress"
+                                                        : task.doc_status === "done"
+                                                            ? "Done"
+                                                            : task.doc_status}
                                             </td>
 
                                             {/* Due Date + Priority */}
@@ -372,15 +484,14 @@ export const Tasks = () => {
                                                     </span>
                                                     <span
                                                         title={`Priority: ${task.doc_prio_level || "None"}`}
-                                                        className={`inline-block h-2.5 w-2.5 rounded-full ${
-                                                            task.doc_prio_level === "High"
+                                                        className={`inline-block h-2.5 w-2.5 rounded-full ${task.doc_prio_level === "High"
                                                                 ? "bg-red-500"
                                                                 : task.doc_prio_level === "Mid"
-                                                                  ? "bg-yellow-500"
-                                                                  : task.doc_prio_level === "Low"
-                                                                    ? "bg-blue-500"
-                                                                    : "bg-gray-400"
-                                                        }`}
+                                                                    ? "bg-yellow-500"
+                                                                    : task.doc_prio_level === "Low"
+                                                                        ? "bg-blue-500"
+                                                                        : "bg-gray-400"
+                                                            }`}
                                                     ></span>
                                                 </div>
                                             </td>
@@ -392,33 +503,30 @@ export const Tasks = () => {
                                                         <button
                                                             onClick={() => updateTaskStatus(task.doc_id, STATUS_IDS.TODO)}
                                                             disabled={task.doc_status === STATUS_IDS.TODO}
-                                                            className={`rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-700 ${
-                                                                task.doc_status === STATUS_IDS.TODO
+                                                            className={`rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-700 ${task.doc_status === STATUS_IDS.TODO
                                                                     ? "cursor-not-allowed bg-slate-100 text-slate-400 dark:bg-slate-700/30 dark:text-slate-500"
                                                                     : "bg-white text-slate-700 dark:bg-slate-700/40 dark:text-slate-200"
-                                                            }`}
+                                                                }`}
                                                         >
                                                             To Do
                                                         </button>
                                                         <button
                                                             onClick={() => updateTaskStatus(task.doc_id, STATUS_IDS.INPROGRESS)}
                                                             disabled={task.doc_status === STATUS_IDS.INPROGRESS}
-                                                            className={`rounded-md px-3 py-1.5 text-xs font-medium text-white ${
-                                                                task.doc_status === STATUS_IDS.INPROGRESS
+                                                            className={`rounded-md px-3 py-1.5 text-xs font-medium text-white ${task.doc_status === STATUS_IDS.INPROGRESS
                                                                     ? "cursor-not-allowed bg-indigo-400"
                                                                     : "bg-indigo-600 hover:bg-indigo-700"
-                                                            }`}
+                                                                }`}
                                                         >
                                                             Progress
                                                         </button>
                                                         <button
                                                             onClick={() => updateTaskStatus(task.doc_id, STATUS_IDS.DONE)}
                                                             disabled={task.doc_status === STATUS_IDS.DONE}
-                                                            className={`rounded-md px-3 py-1.5 text-xs font-medium text-white ${
-                                                                task.doc_status === STATUS_IDS.DONE
+                                                            className={`rounded-md px-3 py-1.5 text-xs font-medium text-white ${task.doc_status === STATUS_IDS.DONE
                                                                     ? "cursor-not-allowed bg-emerald-400"
                                                                     : "bg-emerald-600 hover:bg-emerald-700"
-                                                            }`}
+                                                                }`}
                                                         >
                                                             Done
                                                         </button>
@@ -463,7 +571,7 @@ export const Tasks = () => {
                                 <p className="text-xs text-slate-500 dark:text-slate-400">Task ID: {selectedTask.doc_id}</p>
                             </div>
                             <button
-                                onClick={() => setSelectedTask(null)}
+                                onClick={closeModal}
                                 className="rounded-full p-1.5 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-700 dark:hover:text-white"
                                 aria-label="Close"
                             >
@@ -472,19 +580,18 @@ export const Tasks = () => {
                         </div>
 
                         {/* Body */}
-                        <div className="max-h-[80vh] overflow-y-auto p-6 text-sm">
+                        <div className="custom-scroll max-h-[80vh] overflow-y-auto p-6 text-sm">
                             {/* Meta Info */}
                             <div className="mb-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
                                 <div>
                                     <p className="text-slate-500 dark:text-slate-400">Priority</p>
                                     <p
-                                        className={`mt-0.5 inline-block rounded-md px-2 py-0.5 text-xs font-medium ${
-                                            selectedTask.doc_prio_level === "High"
+                                        className={`mt-0.5 inline-block rounded-md px-2 py-0.5 text-xs font-medium ${selectedTask.doc_prio_level === "High"
                                                 ? "bg-red-100 text-red-700 dark:bg-red-700/30 dark:text-red-300"
                                                 : selectedTask.doc_prio_level === "Mid"
-                                                  ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-700/30 dark:text-yellow-300"
-                                                  : "bg-blue-100 text-blue-700 dark:bg-blue-700/30 dark:text-blue-300"
-                                        }`}
+                                                    ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-700/30 dark:text-yellow-300"
+                                                    : "bg-blue-100 text-blue-700 dark:bg-blue-700/30 dark:text-blue-300"
+                                            }`}
                                     >
                                         {selectedTask.doc_prio_level || "None"}
                                     </p>
@@ -495,8 +602,8 @@ export const Tasks = () => {
                                         {selectedTask.doc_status === "todo"
                                             ? "to do"
                                             : selectedTask.doc_status === "in_progress"
-                                              ? "in progress"
-                                              : "done" || "Unknown"}
+                                                ? "in progress"
+                                                : "done" || "Unknown"}
                                     </p>
                                 </div>
                                 <div>
@@ -557,9 +664,115 @@ export const Tasks = () => {
                                     <p className="text-xs italic text-slate-500 dark:text-slate-400">No file references found.</p>
                                 )}
                             </div>
+
+                            {/* Task Document File Upload */}
+                            <div className="mt-6">
+                                {user.user_role !== "Admin" && user.user_role !== "Lawyer" && (
+                                    <>
+                                        {/* File Input or Upload only if doc_status is "todo" or "in_progress" */}
+                                        {selectedTask.doc_status !== STATUS_IDS.DONE && (
+                                            <div>
+                                                <h3 className="mb-3 text-sm font-semibold text-slate-800 dark:text-slate-200">
+                                                    Upload Task Document (PDF Only)
+                                                </h3>
+
+                                                <label className="flex w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 p-6 transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-700 dark:hover:bg-slate-600">
+                                                    <span className="text-sm text-slate-600 dark:text-slate-300">
+                                                        Click to upload or drag a PDF file here
+                                                    </span>
+                                                    <span className="mt-1 text-xs text-slate-400 dark:text-slate-500">Max size: 10MB</span>
+
+                                                    <input
+                                                        type="file"
+                                                        accept="application/pdf"
+                                                        onChange={(e) => {
+                                                            const file = e.target.files[0];
+                                                            if (!file) return;
+
+                                                            if (file.type !== "application/pdf") {
+                                                                toast.error("Only PDF files are allowed.");
+                                                                return;
+                                                            }
+
+                                                            setPendingFile(file);
+                                                            setPendingPreviewURL(URL.createObjectURL(file));
+                                                        }}
+                                                        className="hidden"
+                                                    />
+                                                </label>
+                                            </div>
+                                        )}
+
+                                        {/* Preview Section BEFORE Upload */}
+                                        {pendingFile && (
+                                            <div className="mt-4 rounded-lg border border-slate-300 bg-slate-50 p-4 hover:underline dark:border-slate-700 dark:bg-slate-800">
+                                                <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                                                    Selected File: {pendingFile.name}
+                                                </p>
+
+                                                <a
+                                                    href={pendingPreviewURL}
+                                                    target="_blank"
+                                                    className="mt-2 inline-block text-sm text-blue-600 dark:text-blue-400"
+                                                >
+                                                    🔍 Preview PDF
+                                                </a>
+
+                                                <button
+                                                    onClick={() => handleTurnIn(selectedTask.doc_id)}
+                                                    className="mt-3 w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+                                                >
+                                                    Turn In
+                                                </button>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+
+                                {selectedTask.doc_file && !pendingFile && (
+                                    <p className="mt-3 text-sm text-blue-600 dark:text-blue-400">
+                                        Submitted File:{" "}
+                                        <a
+                                            href={`http://localhost:3000${selectedTask.doc_file}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="underline"
+                                        >
+                                            {selectedTask.doc_file.split("/").pop()}
+                                        </a>
+                                    </p>
+                                )}
+
+                                {/* Approve and Reject buttons for admin and lawyer */}
+                                {(user.user_role === "Admin" || user.user_role === "Lawyer") && selectedTask.doc_status === STATUS_IDS.DONE && (
+                                    <div className="mt-6 flex gap-4">
+                                        <button
+                                            onClick={() => approveTask(selectedTask.doc_id)}
+                                            className="w-full rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                                        >
+                                            Approve Task
+                                        </button>
+                                        <button
+                                            onClick={() => rejectTask()}
+                                            className="w-full rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+                                        >
+                                            Reject Task
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Reject Task Modal */}
+            {showRejectModal && selectedTask && (
+                <RejectDocumentModal
+                    doc={selectedTask}
+                    onClose={() => setShowRejectModal(false)}
+                    onRejected={handleTaskRejected}
+                />
             )}
         </div>
     );

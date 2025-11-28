@@ -258,7 +258,7 @@ export const Header = ({ collapsed, setCollapsed }) => {
                     onClick={() => navigate("notifications")}
                     className="btn-ghost relative size-10"
                 >
-                    <Bell size={20} />
+                    <Bell size={20} className="bell-animate" />
                     {unreadCount > 0 && (
                         <span className="absolute -right-[-4px] -top-[-2px] inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
                             {unreadCount > 9 ? "9+" : unreadCount}

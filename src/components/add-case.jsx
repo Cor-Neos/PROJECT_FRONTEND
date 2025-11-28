@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
+import { X } from "lucide-react";
 
 const AddNewCase = ({ isModalOpen, setIsModalOpen, handleAddCase, newCase, setNewCase, addCaseModalRef, user }) => {
     if (!isModalOpen) return null;
@@ -7,6 +8,25 @@ const AddNewCase = ({ isModalOpen, setIsModalOpen, handleAddCase, newCase, setNe
     const [caseCategories, setCaseCategories] = useState([]);
     const [caseCategoryTypes, setCaseCategoryTypes] = useState([]);
     const [lawyers, setLawyers] = useState([]);
+
+    // CASE TAGGING data
+    const case_tag_list = [
+        { id: 1, name: "Case Intake" },
+        { id: 2, name: "Conflict Check" },
+        { id: 3, name: "Initial Consultation" },
+        { id: 4, name: "Engagement" },
+        { id: 5, name: "Case Investigation" },
+        { id: 6, name: "Document Preparation & Filing" },
+        { id: 7, name: "Court Proceedings" },
+        { id: 8, name: "Resolution" },
+        { id: 9, name: "Case Closing" },
+    ];
+
+    // default case tags - Case Intake and Case Closing
+    const [selectedTags, setSelectedTags] = useState([
+        { id: 1, name: "Case Intake" },
+        { id: 9, name: "Case Closing" }
+    ]);
 
     // Fetching clients here for the dropdown can be implemented later
     useEffect(() => {
@@ -74,6 +94,19 @@ const AddNewCase = ({ isModalOpen, setIsModalOpen, handleAddCase, newCase, setNe
             setNewCase((prev) => ({ ...prev, case_status: "Pending" }));
         }
     }, [newCase.user_id]);
+
+    // Case Tags Handlers
+    const handleAddTag = (tag) => {
+        if (!selectedTags.find(selected => selected.id === tag.id)) {
+            setSelectedTags(prev => [...prev, tag]);
+            console.log("Current selected tags:", [...selectedTags, tag]);
+        }
+    };
+
+    const handleRemoveTag = (tagId) => {
+        setSelectedTags(prev => prev.filter(tag => tag.id !== tagId));
+        console.log("Current selected tags:", selectedTags.filter(tag => tag.id !== tagId));
+    };
 
     // Validation for required fields
     const isFormValid = () => {
@@ -196,8 +229,8 @@ const AddNewCase = ({ isModalOpen, setIsModalOpen, handleAddCase, newCase, setNe
                                 {user.user_role !== "Admin"
                                     ? `${user.user_fname} ${user.user_mname} ${user.user_lname}`
                                     : !newCase.cc_id
-                                      ? "Select Category first"
-                                      : "Select Lawyer"}
+                                        ? "Select Category first"
+                                        : "Select Lawyer"}
                             </option>
 
                             {user.user_role === "Admin" ? (
@@ -266,8 +299,64 @@ const AddNewCase = ({ isModalOpen, setIsModalOpen, handleAddCase, newCase, setNe
                             onChange={(e) => setNewCase({ ...newCase, case_remarks: e.target.value })}
                             className="w-full resize-none rounded-lg border px-3 py-2 dark:border-gray-600 dark:bg-slate-700 dark:text-white"
                             placeholder="Enter remarks or description..."
-                            rows={3}
+                            rows={2}
                         ></textarea>
+                    </div>
+
+                    {/* Case Tags Section (Stepper UI) */}
+                    <div className="md:col-span-2">
+                        <div className="rounded-lg== border bg-gray-50 p-4 dark:bg-slate-800">
+                            <h4 className="mb-3 text-slate-900 dark:text-slate-50 text-sm font-semibold">Case Tag Process</h4>
+                            <div className="flex flex-row items-center overflow-x-auto gap-2 pb-2">
+                                {/* Stepper: Always show all steps, highlight selected */}
+                                {case_tag_list.map((tag, idx) => {
+                                    const isFirst = tag.id === 1;
+                                    const isLast = tag.id === 9;
+                                    const isSelected = selectedTags.some(t => t.id === tag.id);
+                                    // Always show Case Intake and Case Closing as selected
+                                    const alwaysSelected = isFirst || isLast;
+                                    return (
+                                        <div key={tag.id} className="flex items-center">
+                                            <button
+                                                type="button"
+                                                disabled={alwaysSelected}
+                                                onClick={() => {
+                                                    if (isSelected && !alwaysSelected) {
+                                                        // Remove tag (except first/last)
+                                                        setSelectedTags(prev => prev.filter(t => t.id !== tag.id));
+                                                    } else if (!isSelected) {
+                                                        // Insert tag before last (so closing is always last)
+                                                        setSelectedTags(prev => {
+                                                            const tags = prev.filter(t => t.id !== tag.id);
+                                                            // Insert before last
+                                                            return [
+                                                                ...tags.slice(0, tags.length - 1),
+                                                                tag,
+                                                                tags[tags.length - 1],
+                                                            ];
+                                                        });
+                                                    }
+                                                }}
+                                                className={`flex items-center px-4 py-2 rounded-full border transition-colors text-xs font-medium whitespace-nowrap
+                                                    ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-slate-700 text-blue-600 border-blue-400 hover:bg-blue-50 dark:hover:bg-slate-600'}
+                                                    ${alwaysSelected ? 'cursor-not-allowed opacity-80' : 'hover:bg-blue-100 dark:hover:bg-slate-600'}`}
+                                                title={alwaysSelected ? 'This tag is always included' : isSelected ? 'Remove tag' : 'Add tag'}
+                                            >
+                                                {tag.name}
+                                                {!alwaysSelected && (
+                                                    <span className="ml-2 text-md">{isSelected ? '✓' : ''}</span>
+                                                )}
+                                            </button>
+                                            {/* Arrow between steps, except last */}
+                                            {idx < case_tag_list.length - 1 && (
+                                                <span className="mx-2 text-gray-400">→</span>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                        </div>
                     </div>
 
                     {/* Cabinet */}
@@ -307,7 +396,7 @@ const AddNewCase = ({ isModalOpen, setIsModalOpen, handleAddCase, newCase, setNe
                                 return;
                             }
                             setErrorMsg("");
-                            handleAddCase();
+                            handleAddCase(selectedTags); // Pass selectedTags to parent
                         }}
                         className={`rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 ${!isFormValid() ? "cursor-not-allowed opacity-50" : ""}`}
                         disabled={!isFormValid()}

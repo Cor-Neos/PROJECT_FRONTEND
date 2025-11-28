@@ -122,7 +122,7 @@ const Cases = () => {
         return () => document.removeEventListener("keydown", handleKeyDown);
     }, []);
 
-    const handleAddCase = async () => {
+    const handleAddCase = async (selectedTags) => {
         const toastId = toast.loading("Adding new case...", { duration: 4000 });
 
         try {
@@ -134,6 +134,7 @@ const Cases = () => {
                 assigned_by: newCase.assigned_by ? parseInt(newCase.assigned_by, 10) : null,
                 user_id: newCase.user_id ? parseInt(newCase.user_id, 10) : null,
                 case_fee: newCase.case_fee ? parseFloat(newCase.case_fee) : null,
+                case_tag: JSON.stringify(selectedTags), // send as JSON string
             };
 
             const res = await fetch("http://localhost:3000/api/cases", {

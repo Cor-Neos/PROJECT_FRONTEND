@@ -47,36 +47,36 @@ const Notifications = () => {
     const filteredNotifications = notifications.filter((note) => note.notification_message.toLowerCase().includes(searchQuery.trim().toLowerCase()));
 
     return (
-        <div className="min-h-screen w-full bg-transparent p-6">
+        <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 via-white to-blue-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-6 flex flex-col items-center">
             {/* Header */}
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-8 w-full max-w-2xl flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">Notifications</h1>
-                    <p className="mt-1 text-sm text-gray-700/80 dark:text-gray-400">Stay updated with alerts and messages from BOS Law Firm</p>
+                    <h1 className="text-4xl font-extrabold tracking-tight text-blue-900 dark:text-white drop-shadow-sm">Notifications</h1>
+                    <p className="mt-2 text-base text-gray-700/80 dark:text-gray-400">Stay updated with alerts and messages from <span className="font-semibold text-blue-700 dark:text-blue-300">BOS Law Firm</span></p>
                 </div>
             </div>
 
             {/* Search Bar */}
-            <div className="mb-6 rounded-lg border bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            <div className="mb-8 w-full max-w-2xl rounded-xl border bg-white/90 p-4 shadow-lg dark:border-slate-700 dark:bg-slate-800/90">
                 <div className="relative flex w-full items-center">
                     <input
                         type="text"
                         placeholder="Search notifications..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="h-12 w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 text-base text-gray-700 placeholder-gray-500 shadow-sm focus:border-blue-800 focus:ring-2 focus:ring-blue-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:placeholder-slate-400"
+                        className="h-12 w-full rounded-lg border border-gray-300 bg-white pl-12 pr-4 text-base text-gray-700 placeholder-gray-500 shadow-sm focus:border-blue-800 focus:ring-2 focus:ring-blue-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:placeholder-slate-400 transition-all"
                     />
                     <Search
-                        className="absolute left-3 text-gray-400 dark:text-gray-500"
-                        size={20}
+                        className="absolute left-4 text-gray-400 dark:text-gray-500"
+                        size={22}
                     />
                 </div>
             </div>
 
             {/* Notifications List */}
-            <div className="rounded-lg border bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            <div className="w-full max-w-2xl rounded-2xl border bg-white/95 p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-800/95">
                 {/* Select All + Bulk Actions */}
-                <div className="mb-4 flex flex-col items-start gap-3">
+                <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-2">
                         <input
                             type="checkbox"
@@ -88,9 +88,9 @@ const Notifications = () => {
                                     setSelectedNotifications([]);
                                 }
                             }}
-                            className="h-5 w-5 cursor-pointer accent-[#1e3a8a]"
+                            className="h-5 w-5 cursor-pointer accent-[#1e3a8a] border-2 border-blue-400 shadow-sm"
                         />
-                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 select-none">
                             {selectedNotifications.length > 0 ? `${selectedNotifications.length} selected` : "Select All"}
                         </label>
                     </div>
@@ -100,41 +100,43 @@ const Notifications = () => {
                             onClick={toggleSelectedReadStatus}
                             disabled={selectedNotifications.length === 0}
                             title={allSelectedAreRead ? "Mark as Unread" : "Mark as Read"}
-                            className={`flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium transition ${
-                                selectedNotifications.length === 0
+                            className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold shadow transition-all duration-150
+                                ${selectedNotifications.length === 0
                                     ? "cursor-not-allowed opacity-50 dark:text-gray-500"
-                                    : "border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-slate-600 dark:text-blue-400 dark:hover:bg-slate-700"
-                            }`}
+                                    : allSelectedAreRead
+                                        ? "border-yellow-300 text-yellow-700 bg-yellow-50 hover:bg-yellow-100 dark:border-yellow-600 dark:text-yellow-300 dark:hover:bg-yellow-900"
+                                        : "border-blue-300 text-blue-700 bg-blue-50 hover:bg-blue-100 dark:border-blue-600 dark:text-blue-300 dark:hover:bg-blue-900"
+                                }`}
                         >
-                            {allSelectedAreRead ? <MailOpen size={16} /> : <Mail size={16} />}
+                            {allSelectedAreRead ? <MailOpen size={18} /> : <Mail size={18} />}
                             {allSelectedAreRead ? "Mark as Unread" : "Mark as Read"}
                         </button>
 
                         <button
                             onClick={clearAll}
-                            className="flex items-center gap-2 rounded-md border border-red-300 px-3 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-100 dark:border-slate-600 dark:hover:bg-slate-700"
+                            className="flex items-center gap-2 rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 shadow transition hover:bg-red-100 dark:border-red-600 dark:bg-red-900 dark:text-red-300 dark:hover:bg-red-800"
                         >
-                            <Trash2 size={16} /> Clear All
+                            <Trash2 size={18} /> Clear All
                         </button>
                     </div>
                 </div>
 
                 {/* Notifications */}
                 {filteredNotifications.length > 0 ? (
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                         {filteredNotifications.map((note) => {
                             const isSelected = selectedNotifications.includes(note.notification_id);
                             return (
                                 <div
                                     key={note.notification_id}
                                     onClick={() => setSelectedNotification(note)}
-                                    className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-all hover:scale-[1.01] hover:bg-blue-50 dark:hover:bg-blue-900 ${
-                                        isSelected
-                                            ? "border-blue-700 bg-blue-100/60 dark:bg-blue-900/40"
+                                    className={`flex cursor-pointer items-start gap-4 rounded-xl border p-5 transition-all duration-150 shadow-sm hover:scale-[1.015] hover:bg-blue-50 dark:hover:bg-blue-900/60
+                                        ${isSelected
+                                            ? "border-blue-700 bg-blue-100/70 dark:bg-blue-900/40"
                                             : note.is_read
-                                              ? "border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-800"
-                                              : "bg-blue-50 dark:bg-slate-700"
-                                    }`}
+                                                ? "border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-800"
+                                                : "border-blue-200 bg-blue-50/80 dark:border-blue-700 dark:bg-blue-950/40"
+                                        }`}
                                 >
                                     <input
                                         type="checkbox"
@@ -146,24 +148,24 @@ const Notifications = () => {
                                                 checked ? [...prev, note.notification_id] : prev.filter((id) => id !== note.notification_id),
                                             );
                                         }}
-                                        className="mt-1 h-5 w-5 cursor-pointer accent-[#1e3a8a]"
+                                        className="mt-1 h-5 w-5 cursor-pointer accent-[#1e3a8a] border-2 border-blue-400 shadow-sm"
                                     />
 
                                     {/* Message + Timestamp */}
                                     <div className="flex flex-1 items-start justify-between">
                                         <div>
                                             <p
-                                                className={`text-sm ${
+                                                className={`text-base leading-snug ${
                                                     note.is_read
                                                         ? "text-gray-900 dark:text-slate-300"
-                                                        : "font-semibold text-[#1e3a8a] dark:text-white"
+                                                        : "font-bold text-[#1e3a8a] dark:text-white"
                                                 }`}
                                             >
                                                 {note.notification_message}
                                             </p>
                                         </div>
-                                        <div className="ml-4 flex-shrink-0 text-right">
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                                        <div className="ml-6 flex-shrink-0 text-right">
+                                            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
                                                 {new Date(note.date_created).toLocaleString("en-US", {
                                                     month: "short",
                                                     day: "numeric",
@@ -180,7 +182,11 @@ const Notifications = () => {
                         })}
                     </div>
                 ) : (
-                    <div className="py-6 text-center text-gray-500 dark:text-gray-400">No notifications available</div>
+                    <div className="py-16 flex flex-col items-center justify-center text-center">
+                        <MailOpen size={48} className="mb-4 text-blue-300 dark:text-blue-700" />
+                        <div className="text-lg font-semibold text-gray-500 dark:text-gray-400">No notifications available</div>
+                        <div className="mt-2 text-sm text-gray-400 dark:text-gray-600">You're all caught up!</div>
+                    </div>
                 )}
             </div>
         </div>

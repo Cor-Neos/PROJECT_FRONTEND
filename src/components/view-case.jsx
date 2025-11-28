@@ -42,6 +42,9 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
     const [isActionModalOpen, setIsActionModalOpen] = useState(false);
     const [actionType, setActionType] = useState("");
 
+    // Track selected tag for automation stepper UI
+    const [selectedTagIdx, setSelectedTagIdx] = useState(0); // default to Case Intake (first tag)
+
     // Fetching payments
     useEffect(() => {
         const fetchPayments = async () => {
@@ -126,6 +129,8 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
     useClickOutside([modalRef], () => {
         setSelectedCase(null);
         setShowPayments(false);
+        // Reset selectedTagIdx to first tag (Case Intake)
+        setSelectedTagIdx(0);
     });
 
     const handleFileUpload = (event) => {
@@ -141,8 +146,8 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
         const lawyer = tableData.find((u) => u.user_id === lawyerId);
         return lawyer
             ? `${lawyer.user_fname || ""} ${lawyer.user_mname ? lawyer.user_mname[0] + "." : ""} ${lawyer.user_lname || ""}`
-                  .replace(/\s+/g, " ")
-                  .trim()
+                .replace(/\s+/g, " ")
+                .trim()
             : "Unassigned";
     };
 
@@ -183,10 +188,10 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
                         type === "close"
                             ? "Completed"
                             : type === "dismiss"
-                              ? "Dismissed"
-                              : type === "archive" && selectedCase.case_status === "Completed"
-                                ? "Archived (Completed)"
-                                : "Archived (Dismissed)",
+                                ? "Dismissed"
+                                : type === "archive" && selectedCase.case_status === "Completed"
+                                    ? "Archived (Completed)"
+                                    : "Archived (Dismissed)",
                     last_updated_by: user.user_id,
                 }),
             });
@@ -218,28 +223,77 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
             >
                 <button
                     className="absolute right-4 top-4 text-gray-500 hover:text-gray-800 dark:hover:text-white"
-                    onClick={() => setSelectedCase(null)}
+                    onClick={() => {
+                        setSelectedCase(null);
+                        // Reset selectedTagIdx to first tag (Case Intake)
+                        setSelectedTagIdx(0);
+                    }}
                 >
                     <X className="btn-ghost h-8 w-8" />
                 </button>
 
                 {!showPayments ? (
                     <>
-                        <div className="mb-4 flex items-center justify-between">
-                            <div>
-                                <h2 className="text-2xl font-semibold">Case {selectedCase.case_id}</h2>
-                                <div className="mt-1 flex gap-4 text-sm text-gray-600 dark:text-gray-300">
-                                    <span>Cabinet #: {selectedCase.case_cabinet}</span>
-                                    {selectedCase.case_drawer && <span>Drawer #: {selectedCase.case_drawer}</span>}
-                                </div>
+                        <div className="mb-4 flex flex-col gap-2">
+
+                            {/* Case Name and Details */}
+                            <h2 className="text-2xl font-semibold">Case {selectedCase.case_id}</h2>
+                            <div className="mt-1 flex gap-4 text-sm text-gray-600 dark:text-gray-300">
+                                <span>Cabinet #: {selectedCase.case_cabinet}</span>
+                                {selectedCase.case_drawer && <span>Drawer #: {selectedCase.case_drawer}</span>}
+                                {/* Location (Branch) - moved above tags */}
+                                <label className="flex items-center gap-2 text-sm text-slate-500 mb-2 right-0">
+                                    <MapPin size={20} strokeWidth={2} className="text-red-400 dark:text-red-700" />
+                                    <span>{selectedCase.branch_name}</span>
+                                </label>
                             </div>
-                            <div className="mr-7 flex items-center gap-1 text-sm text-slate-500">
-                                <MapPin
-                                    size={20}
-                                    strokeWidth={2}
-                                    className="text-red-400 dark:text-red-700"
-                                />
-                                <span>{selectedCase.branch_name}</span>
+                            {/* Case Tag Process Stepper - scrollable landsc    ape */}
+                            <div className="col-span-2 mb-1">
+                                <div className="p-1 rounded-lg">
+                                    <div className="flex flex-row items-center overflow-x-auto gap-2 pb-2 scrollbar-thin scrollbar-thumb-blue-300 scrollbar-track-blue-100 dark:scrollbar-thumb-blue-900 dark:scrollbar-track-slate-700">
+                                        {(() => {
+                                            let tags = [];
+                                            try {
+                                                tags = selectedCase.case_tag_list ? JSON.parse(selectedCase.case_tag_list) : [];
+                                            } catch {
+                                                tags = [];
+                                            }
+                                            // Always default to Case Intake and Case Closing if tags are empty or invalid
+                                            if (!Array.isArray(tags) || tags.length === 0) {
+                                                tags = [
+                                                    { id: 1, name: "Case Intake" },
+                                                    { id: 9, name: "Case Closing" }
+                                                ];
+                                            }
+                                            return tags.map((tag, idx, arr) => {
+                                                const isActive = idx === arr.length - 1;
+                                                const isSelected = selectedTagIdx === idx;
+                                                return (
+                                                    <div key={tag.id} className="flex items-center">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setSelectedTagIdx(idx)}
+                                                            className={`flex items-center px-5 py-2 rounded-full border text-xs font-medium whitespace-nowrap transition-all duration-200 focus:outline-none 
+                                                                ${isSelected
+                                                                    ? 'bg-gradient-to-r from-blue-500 to-blue-700 text-white border-blue-600 shadow-lg'
+                                                                    : isActive
+                                                                        ? 'bg-gradient-to-r from-blue-400/60 to-blue-700/60 text-white border-blue-500 shadow-md opacity-90'
+                                                                        : 'bg-white/20 dark:bg-slate-700/20 border-blue-400 text-blue-700 dark:text-blue-200 hover:bg-blue-100/40 hover:text-blue-900 dark:hover:bg-blue-900/40 dark:hover:text-white'}
+                                                            `}
+                                                            style={{ backdropFilter: 'blur(2px)' }}
+                                                        >
+                                                            {tag.name}
+                                                        </button>
+                                                        {/* Arrow between steps, except last */}
+                                                        {idx < arr.length - 1 && (
+                                                            <span className="mx-2 text-blue-400 text-lg font-bold select-none">→</span>
+                                                        )}
+                                                    </div>
+                                                );
+                                            });
+                                        })()}
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -297,6 +351,7 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
                                         rows={3}
                                     />
                                 </div>
+
                             </div>
                             <div className="space-y-4">
                                 <div className="rounded-lg border bg-gray-50 p-4 dark:bg-slate-800">
@@ -307,9 +362,9 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
                                             <span className="font-semibold">
                                                 {selectedCase?.case_fee !== null && selectedCase?.case_fee !== undefined
                                                     ? new Intl.NumberFormat("en-PH", {
-                                                          style: "currency",
-                                                          currency: "PHP",
-                                                      }).format(Number(selectedCase.case_fee))
+                                                        style: "currency",
+                                                        currency: "PHP",
+                                                    }).format(Number(selectedCase.case_fee))
                                                     : "₱0.00"}
                                             </span>
                                         </div>
@@ -329,9 +384,9 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
                                             <span>
                                                 {selectedCase?.case_balance !== null && selectedCase?.case_balance !== undefined
                                                     ? new Intl.NumberFormat("en-PH", {
-                                                          style: "currency",
-                                                          currency: "PHP",
-                                                      }).format(Number(selectedCase.case_balance))
+                                                        style: "currency",
+                                                        currency: "PHP",
+                                                    }).format(Number(selectedCase.case_balance))
                                                     : "₱0.00"}
                                             </span>
                                         </div>
@@ -367,17 +422,16 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
                                     <p>
                                         <strong>Status:</strong>{" "}
                                         <span
-                                            className={`inline-block rounded-full px-3 py-1 text-xs font-medium capitalize ${
-                                                selectedCase.case_status === "Pending"
-                                                    ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-700/20 dark:text-yellow-300"
-                                                    : selectedCase.case_status === "Processing"
-                                                      ? "bg-blue-100 text-blue-700 dark:bg-blue-700/20 dark:text-blue-300"
-                                                      : selectedCase.case_status === "Completed"
+                                            className={`inline-block rounded-full px-3 py-1 text-xs font-medium capitalize ${selectedCase.case_status === "Pending"
+                                                ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-700/20 dark:text-yellow-300"
+                                                : selectedCase.case_status === "Processing"
+                                                    ? "bg-blue-100 text-blue-700 dark:bg-blue-700/20 dark:text-blue-300"
+                                                    : selectedCase.case_status === "Completed"
                                                         ? "bg-green-100 text-green-700 dark:bg-green-700/20 dark:text-green-300"
                                                         : selectedCase.case_status === "Archived (Completed)"
-                                                          ? "bg-black text-white dark:bg-slate-200 dark:text-black"
-                                                          : "bg-gray-100 text-gray-700 dark:bg-gray-700/50 dark:text-gray-300"
-                                            }`}
+                                                            ? "bg-black text-white dark:bg-slate-200 dark:text-black"
+                                                            : "bg-gray-100 text-gray-700 dark:bg-gray-700/50 dark:text-gray-300"
+                                                }`}
                                         >
                                             {selectedCase.case_status}
                                         </span>
@@ -449,8 +503,8 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
                                                     {doc.doc_status === "todo"
                                                         ? "to do"
                                                         : doc.doc_status === "in_progress"
-                                                          ? "in progress"
-                                                          : doc.doc_status}
+                                                            ? "in progress"
+                                                            : doc.doc_status}
                                                 </td>
                                                 <td className="px-4 py-2">{doc.doc_due_date ? formatDateTime(doc.doc_due_date) : "N/A"}</td>
                                                 <td className="px-4 py-2">{getSubmitterName(doc.doc_submitted_by)}</td>
@@ -661,7 +715,7 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
                                         : "₱0.00"}
                                 </p>
                             </div> */}
-                            <div className="rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100 p-5 shadow-sm dark:border-blue-800 dark:from-blue-900 dark:to-blue-800">
+                            <div className="rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100 p-5 shadow-sm dark:border-blue-800 dark:from-blue-900 dark:to-blue-800">
                                 <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Case Fee</p>
                                 <p className="mt-2 text-2xl font-extrabold text-blue-800 dark:text-blue-200">
                                     {selectedCase?.case_fee !== null && selectedCase?.case_fee !== undefined

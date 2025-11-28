@@ -74,7 +74,7 @@ export const ProfileModal = ({ onClose }) => {
     };
 
     const handleSave = async () => {
-        const toastId = toast.loading("Updating profile...");
+        const toastId = toast.loading("Updating profile...", { duration: 4000 });
 
         try {
             let response;
@@ -84,6 +84,7 @@ export const ProfileModal = ({ onClose }) => {
                     form.append(key, value);
                 });
                 form.append("user_profile", newProfile);
+                form.append("user_last_updated_by", user.user_id);
 
                 response = await fetch(`http://localhost:3000/api/users/${user.user_id}`, {
                     method: "PUT",
@@ -91,11 +92,12 @@ export const ProfileModal = ({ onClose }) => {
                     body: form,
                 });
             } else {
+                const formDataWithUpdater = { ...formData, user_last_updated_by: user.user_id };
                 response = await fetch(`http://localhost:3000/api/users/${user.user_id}`, {
                     method: "PUT",
                     credentials: "include",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(formData),
+                    body: JSON.stringify(formDataWithUpdater),
                 });
             }
 

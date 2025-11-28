@@ -1,4 +1,4 @@
-import { ChartColumn, Folders, Home, ListTodo, Users, Logs, Archive, ShieldUser, FileText, Wallet } from "lucide-react";
+import { ChartColumn, Folders, Home, ListTodo, Users, Logs, Archive, ShieldUser, FileText, Wallet, Trash } from "lucide-react";
 
 const allNavbarLinks = [
     { label: "Home", icon: Home, path: "/" },
@@ -10,6 +10,7 @@ const allNavbarLinks = [
     { label: "Reports", icon: ChartColumn, path: "/reports" },
     { label: "Case Archive", icon: Archive, path: "/case-archive" },
     { label: "Payments", icon: Wallet, path: "/payments" },
+    { label: "Trash", icon: Trash, path: "/trash" },
     { label: "Activity Logs", icon: Logs, path: "/user-logs" },
 ];
 
