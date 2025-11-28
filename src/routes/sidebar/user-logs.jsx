@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import defaultAvatar from "../../assets/default-avatar.png";
 import { FileText, Archive, User, Scale, LogIn, LogOut, AlertTriangle, Activity, Search, ListCheck, FilePlus2, BadgeCent } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
+import api from "@/utils/api";
 
 const Userlogs = () => {
     const { user } = useAuth();
@@ -17,26 +18,16 @@ const Userlogs = () => {
     useEffect(() => {
         const fetchUserLogs = async () => {
             try {
-                const endpoint =
-                    user?.user_role === "Admin" ? "http://localhost:3000/api/user-logs" : `http://localhost:3000/api/user-logs/${user.user_id}`;
-
-                const res = await fetch(endpoint, {
-                    method: "GET",
-                    credentials: "include",
-                });
-
-                if (!res.ok) throw new Error("Failed to fetch user logs");
-
-                const data = await res.json();
+                const path = user?.user_role === "Admin" ? "/user-logs" : `/user-logs/${user.user_id}`;
+                const data = await api.get(path);
                 setUserLogs(data);
             } catch (error) {
                 console.error("Failed to fetch user logs:", error);
                 setError(error.message || "An error occurred while fetching logs.");
             }
         };
-
         fetchUserLogs();
-    }, []);
+    }, [user?.user_role, user?.user_id]);
 
     const getLogIcon = (log) => {
         const type = log.user_log_type?.toLowerCase();
@@ -156,7 +147,7 @@ const Userlogs = () => {
                 <div className="space-y-4">
                     {filteredLogs.slice(0, visibleCount).map((log, index) => {
                         const fullName = `${log.user_fullname ? log.user_fullname : "Unknown User"}`;
-                        const avatar = log.user_profile ? `http://localhost:3000${log.user_profile}` : defaultAvatar;
+                        const avatar = log.user_profile ? `${api.baseUrl.replace(/\/api$/, '')}${log.user_profile}` : defaultAvatar;
                         const icon = getLogIcon(log);
                         const tag = getLogTag(log.user_log_action);
                         const tagColor = getTagColor(log.user_log_action);

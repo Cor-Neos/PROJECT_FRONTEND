@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/auth-context.jsx";
+import api from "@/utils/api";
 import toast from "react-hot-toast";
 import Spinner from "./loading.jsx";
 
@@ -56,11 +57,7 @@ export default function AddDocument({ caseId, onClose, onAdded }) {
         setLoadingDocs(true);
         setError("");
         try {
-            const res = await fetch(`http://localhost:3000/api/case/documents/${caseId}`, {
-                credentials: "include",
-            });
-            if (!res.ok) throw new Error(`Failed to load documents (${res.status})`);
-            const data = await res.json();
+            const data = await api.get(`/case/documents/${caseId}`);
             setDocs(Array.isArray(data) ? data : []);
         } catch (e) {
             setError(e.message || "Failed to load documents");
@@ -91,16 +88,7 @@ export default function AddDocument({ caseId, onClose, onAdded }) {
             // only one file
             if (file) fd.append("doc_file", file);
 
-            const res = await fetch("http://localhost:3000/api/documents", {
-                method: "POST",
-                body: fd,
-                credentials: "include",
-            });
-
-            if (!res.ok) {
-                const t = await res.text();
-                throw new Error(t || "Failed to create document");
-            }
+            await api.post("/documents", fd);
 
             toast.success("Document added successfully", { id: toastId, duration: 4000 });
 
@@ -272,7 +260,7 @@ export default function AddDocument({ caseId, onClose, onAdded }) {
                                                 {d.doc_file ? (
                                                     <a
                                                         className="text-blue-600 hover:underline"
-                                                        href={`http://localhost:3000${d.doc_file}`}
+                                                        href={`${api.baseUrl.replace(/\/api$/, '')}${d.doc_file}`}
                                                         target="_blank"
                                                         rel="noreferrer"
                                                     >

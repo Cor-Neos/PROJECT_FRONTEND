@@ -1,4 +1,5 @@
 import { useAuth } from "@/context/auth-context";
+import api from "../utils/api.js";
 import { useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import boslogo from "@/assets/light_logo.png";
@@ -90,31 +91,12 @@ export default function Verify() {
         }
 
         const code = otp.join("");
-
         const toastId = toast.loading("Logging in...", { duration: 4000 });
 
         try {
-            const res = await fetch("http://localhost:3000/api/verify-2fa", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({ user_id, code }),
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                setError(data.error || "Invalid code.");
-                setLoading(false);
-                return;
-            }
-
+            const data = await api.post("/verify-2fa", { user_id, code });
             login(data.user);
-            toast.success("Login successful!", {
-                id: toastId,
-                duration: 4000,
-            });
-
+            toast.success("Login successful!", { id: toastId, duration: 4000 });
             localStorage.removeItem("pendingUserId");
             localStorage.removeItem("pendingUserEmail");
             navigate("/");
@@ -126,7 +108,7 @@ export default function Verify() {
         }
     };
 
-    // Handle Resend OTP
+    // Resend OTP
     const handleResend = async () => {
         setLoading(true);
         setError("");
@@ -135,35 +117,24 @@ export default function Verify() {
         if (!user_id) {
             setError("Session expired. Please log in again.");
             navigate("/login");
+            setLoading(false);
             return;
         }
 
         try {
-            const res = await fetch("http://localhost:3000/api/resend-otp", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({ user_id }),
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                setError(data.error || "Failed to resend code.");
-            } else {
-                setMessage(`A new OTP was sent to ${localStorage.getItem("pendingUserEmail")}`);
-                setResendTimer(30);
-                setOtp(Array(6).fill(""));
-                inputRefs.current[0]?.focus();
-                toast.success("New OTP sent!");
-            }
+            await api.post("/resend-otp", { user_id });
+            setMessage(`A new OTP was sent to ${localStorage.getItem("pendingUserEmail")}`);
+            setResendTimer(30);
+            setOtp(Array(6).fill(""));
+            inputRefs.current[0]?.focus();
+            toast.success("New OTP sent!");
         } catch (err) {
             console.error("Resend OTP error:", err);
-            setError("Something went wrong.");
-            toast.error(err, { duration: 7000 });
+            setError(err?.data?.error || "Failed to resend code.");
+            toast.error(err?.message || "Resend failed", { duration: 4000 });
+        } finally {
+            setLoading(false);
         }
-
-        setLoading(false);
     };
 
     return (

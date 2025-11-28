@@ -6,11 +6,14 @@ import default_avatar from "@/assets/default-avatar.png";
 
 import { useClickOutside } from "@/hooks/use-click-outside";
 import { useAuth } from "@/context/auth-context";
+import api from "../utils/api";
 
 export const ProfileModal = ({ onClose }) => {
     const { user, setUser } = useAuth();
 
-    const [preview, setPreview] = useState(user?.user_profile ? `http://localhost:3000${user.user_profile}` : default_avatar);
+    const [preview, setPreview] = useState(
+        user?.user_profile ? `${api.baseUrl.replace(/\/api$/, "")}${user.user_profile}` : default_avatar,
+    );
     const [newProfile, setNewProfile] = useState(null); // for file upload
 
     const [formData, setFormData] = useState(user || {});
@@ -42,11 +45,7 @@ export const ProfileModal = ({ onClose }) => {
 
         const fetchBranchName = async () => {
             try {
-                const res = await fetch("http://localhost:3000/api/branches", {
-                    method: "GET",
-                    credentials: "include",
-                });
-                const data = await res.json();
+                const data = await api.get("/branches");
                 const branch = data.find((b) => b.branch_id === user.branch_id);
                 setBranchName(branch?.branch_name || "Unknown");
             } catch (error) {
@@ -85,27 +84,12 @@ export const ProfileModal = ({ onClose }) => {
                 });
                 form.append("user_profile", newProfile);
 
-                response = await fetch(`http://localhost:3000/api/users/${user.user_id}`, {
-                    method: "PUT",
-                    credentials: "include",
-                    body: form,
-                });
+                response = await api.put(`/users/${user.user_id}`, form);
             } else {
-                response = await fetch(`http://localhost:3000/api/users/${user.user_id}`, {
-                    method: "PUT",
-                    credentials: "include",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(formData),
-                });
+                response = await api.put(`/users/${user.user_id}`, formData);
             }
 
-            if (!response.ok) throw new Error("Failed to update user");
-
-            const verifyRes = await fetch("http://localhost:3000/api/verify", {
-                credentials: "include",
-            });
-
-            const { user: updatedUser } = await verifyRes.json();
+            const { user: updatedUser } = await api.get("/verify");
             setUser(updatedUser);
 
             toast.success("Profile updated successfully.", { id: toastId, duration: 4000 });
@@ -182,7 +166,7 @@ export const ProfileModal = ({ onClose }) => {
                         </div>
                     ) : (
                         <img
-                            src={user?.user_profile ? `http://localhost:3000${user.user_profile}` : default_avatar}
+                            src={user?.user_profile ? `${api.baseUrl.replace(/\/api$/, "")}${user.user_profile}` : default_avatar}
                             alt="Profile"
                             className={`mb-3 h-32 w-32 rounded-full object-cover p-1 outline outline-4 ${outlineColor}`}
                         />
@@ -266,7 +250,11 @@ export const ProfileModal = ({ onClose }) => {
                                 onClick={() => {
                                     setIsEditing(false);
                                     setFormData(user || {});
-                                    setPreview(user?.user_profile ? `http://localhost:3000${user.user_profile}` : default_avatar);
+                                    setPreview(
+                                        user?.user_profile
+                                            ? `${api.baseUrl.replace(/\/api$/, "")}${user.user_profile}`
+                                            : default_avatar,
+                                    );
                                 }}
                                 className="flex items-center gap-2 rounded bg-gray-400 px-4 py-2 text-sm font-medium text-white hover:bg-gray-500"
                             >

@@ -4,6 +4,7 @@ import { useClickOutside } from "@/hooks/use-click-outside";
 import { Pencil, Trash2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useAuth } from "@/context/auth-context";
+import api from "../utils/api";
 
 const ClientContact = () => {
     const { user } = useAuth();
@@ -27,36 +28,24 @@ const ClientContact = () => {
             try {
                 const client_contacts_endpoint =
                     user?.user_role === "Admin" || user?.user_role === "Staff"
-                        ? "http://localhost:3000/api/client-contacts"
-                        : `http://localhost:3000/api/a-lawyer-client-contacts/${user.user_id}`;
+                        ? "/client-contacts"
+                        : `/a-lawyer-client-contacts/${user.user_id}`;
 
                 const clients_endpoint =
                     user?.user_role === "Admin" || user?.user_role === "Staff"
-                        ? "http://localhost:3000/api/clients"
-                        : `http://localhost:3000/api/clients/${user.user_id}`;
+                        ? "/clients"
+                        : `/clients/${user.user_id}`;
 
-                // Fetch both contacts and clients in parallel
-                const [contactsRes, clientsRes] = await Promise.all([
-                    fetch(client_contacts_endpoint, {
-                        credentials: "include",
-                    }),
-                    fetch(clients_endpoint, {
-                        credentials: "include",
-                    }),
+                const [contactsData, clientsData] = await Promise.all([
+                    api.get(client_contacts_endpoint),
+                    api.get(clients_endpoint),
                 ]);
-
-                if (!contactsRes.ok || !clientsRes.ok) {
-                    throw new Error("Failed to fetch contacts or clients.");
-                }
-
-                const contactsData = await contactsRes.json();
-                const clientsData = await clientsRes.json();
 
                 setTableData(contactsData);
                 setClients(clientsData);
             } catch (err) {
                 console.error("Fetch Error:", err);
-                setError(err);
+                setError(err.message || "Failed to fetch contacts or clients.");
                 toast.error("Unable to load client contacts or clients.");
             }
         };
@@ -86,20 +75,10 @@ const ClientContact = () => {
         const toastId = toast.loading("Adding new contact...");
 
         try {
-            const res = await fetch("http://localhost:3000/api/client-contacts", {
-                method: "POST",
-                credentials: "include",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ ...newContact, contact_created_by: user.user_id }),
+            const createdContact = await api.post("/client-contacts", {
+                ...newContact,
+                contact_created_by: user.user_id,
             });
-
-            if (!res.ok) {
-                throw new Error("Failed to add new contact.");
-            }
-
-            const createdContact = await res.json();
 
             // Update UI instantly
             setTableData((prev) => [createdContact, ...prev]);
@@ -124,18 +103,11 @@ const ClientContact = () => {
         const toastId = toast.loading(`Removing contact: ${contact.contact_fullname}...`);
 
         try {
-            const res = await fetch(`http://localhost:3000/api/client-contacts/${contact.contact_id}`, {
-                method: "PUT",
-                credentials: "include",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ ...contact, contact_status: "Removed", contact_updated_by: user.user_id }),
+            await api.put(`/client-contacts/${contact.contact_id}`, {
+                ...contact,
+                contact_status: "Removed",
+                contact_updated_by: user.user_id,
             });
-
-            if (!res.ok) {
-                throw new Error("Failed to remove contact.");
-            }
 
             // Remove contact from UI
             setTableData((prev) => prev.filter((item) => item.contact_id !== contact.contact_id));
@@ -161,7 +133,7 @@ const ClientContact = () => {
             {error && (
                 <div className="alert alert-error mx-10 mb-5 mt-5 shadow-lg">
                     <div>
-                        <span>{error.message}</span>
+                        <span>{error}</span>
                     </div>
                 </div>
             )}
@@ -385,20 +357,11 @@ const EditContactModal = ({ contact, onClose, onSave, clients = [] }) => {
             const { firstName, middleName, lastName, ...rest } = formData;
             const contact_fullname = [firstName, middleName, lastName].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
 
-            const res = await fetch(`http://localhost:3000/api/client-contacts/${rest.contact_id}`, {
-                method: "PUT",
-                credentials: "include",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ ...rest, contact_fullname, contact_updated_by: user.user_id }),
+            const updatedContact = await api.put(`/client-contacts/${rest.contact_id}`, {
+                ...rest,
+                contact_fullname,
+                contact_updated_by: user.user_id,
             });
-
-            if (!res.ok) {
-                throw new Error("Failed to update contact.");
-            }
-
-            const updatedContact = await res.json();
             onSave(updatedContact); // update state in parent
 
             toast.success("Contact successfully updated!", {

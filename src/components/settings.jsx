@@ -4,6 +4,7 @@ import { useAuth } from "@/context/auth-context";
 import toast from "react-hot-toast";
 import CaseAccessBoard from "@/components/case-access/case-access-board";
 import ViewModal from "./view-case";
+import api from "@/utils/api";
 
 // Simple reusable section card
 const SettingsCard = ({ title, actions, children }) => (
@@ -16,7 +17,7 @@ const SettingsCard = ({ title, actions, children }) => (
     </section>
 );
 
-const API_BASE = "http://localhost:3000/api";
+const API_BASE = api.baseUrl;
 
 const Settings = () => {
     const { user } = useAuth?.() || { user: null };
@@ -426,20 +427,11 @@ const Settings = () => {
         const toastId = toast.loading("Unarchiving case...", { duration: 4000 });
 
         try {
-            const res = await fetch(`${API_BASE}/cases/${caseToBeUnarchived.case_id}`, {
-                method: "PUT",
-                credentials: "include",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    ...caseToBeUnarchived,
-                    case_status: "Completed",
-                    last_updated_by: user.user_id,
-                }),
+            await api.put(`/cases/${caseToBeUnarchived.case_id}`, {
+                ...caseToBeUnarchived,
+                case_status: "Completed",
+                last_updated_by: user.user_id,
             });
-
-            if (!res.ok) throw new Error("Failed to unarchive case");
 
             setArchivedCases((prev) => prev.filter((item) => item.case_id !== caseToBeUnarchived.case_id));
 
@@ -599,26 +591,12 @@ const Settings = () => {
     })();
 
     const persistUserRole = async (userId, newRole) => {
-        const trials = [
-            { url: `${API_BASE}/users/${userId}`, method: "PUT", body: { user_role: newRole } },
-            { url: `${API_BASE}/users/${userId}/role`, method: "PUT", body: { user_role: newRole } },
-        ];
-        let lastErr;
-        for (const t of trials) {
-            try {
-                const res = await fetch(t.url, {
-                    method: t.method,
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify(t.body),
-                });
-                if (!res.ok) throw new Error((await res.text()) || "Failed to update role");
-                return true;
-            } catch (e) {
-                lastErr = e;
-            }
+        try {
+            await api.put(`/users/${userId}/role`, { user_role: newRole });
+            return true;
+        } catch (e) {
+            throw e;
         }
-        throw lastErr || new Error("Failed to update role");
     };
 
     const onDragStartUser = (fromCol, id) => (e) => {
@@ -1373,12 +1351,7 @@ const Settings = () => {
                             <button
                                 onClick={async () => {
                                     try {
-                                        await fetch(`${API_BASE}/cases/${selectedAccessCase.case_id}/share`, {
-                                            method: "PUT",
-                                            headers: { "Content-Type": "application/json" },
-                                            credentials: "include",
-                                            body: JSON.stringify({ allowed_viewers: selectedUsers }),
-                                        });
+                                        await api.put(`/cases/${selectedAccessCase.case_id}/share`, { allowed_viewers: selectedUsers });
                                         toast.success("Access updated!");
                                         setArchivedCases((prev) =>
                                             prev.map((item) =>

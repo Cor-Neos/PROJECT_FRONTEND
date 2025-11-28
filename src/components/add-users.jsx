@@ -4,6 +4,7 @@ import { User, Image, Mail, Lock, Eye, EyeOff, Phone, Briefcase } from "lucide-r
 import { useClickOutside } from "@/hooks/use-click-outside";
 import { useAuth } from "@/context/auth-context";
 import toast from "react-hot-toast";
+import api from "../utils/api";
 
 const AddUser = ({ onClose }) => {
     const navigate = useNavigate();
@@ -29,12 +30,7 @@ const AddUser = ({ onClose }) => {
     useEffect(() => {
         const fetchBranches = async () => {
             try {
-                const res = await fetch("http://localhost:3000/api/branches", {
-                    method: "GET",
-                    credentials: "include",
-                });
-
-                const data = await res.json();
+                const data = await api.get("/branches");
                 setBranches(data);
             } catch (err) {
                 console.error("Failed to load branches:", err);
@@ -70,15 +66,9 @@ const AddUser = ({ onClose }) => {
         }
 
         try {
-            const res = await fetch("http://localhost:3000/api/users", {
-                method: "POST",
-                body: formData,
-                credentials: "include",
-            });
+            const data = await api.post("/users", formData);
 
-            const data = await res.json();
-
-            if (res.ok) {
+            if (data) {
                 toast.success("User successfully added!", {
                     id: toastId,
                     duration: 4000,
@@ -96,13 +86,6 @@ const AddUser = ({ onClose }) => {
                 setPreview(null);
 
                 onClose();
-            } else {
-                console.error("Failed to add user:", data);
-                setError(data.error || "Fail adding user");
-                toast.error(data.error || "Failed to add user.", {
-                    id: toastId,
-                    duration: 4000,
-                });
             }
         } catch (err) {
             console.error("Error adding user:", err);

@@ -4,6 +4,7 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianG
 import { useNavigate } from "react-router-dom";
 import defaultAvatar from "../../assets/default-avatar.png";
 import { useAuth } from "../../context/auth-context.jsx";
+import api from "../../utils/api";
 
 const StatCard = ({ title, value, icon }) => (
     <div className="flex flex-col justify-between gap-2 rounded-lg bg-white p-4 shadow dark:bg-slate-900">
@@ -143,11 +144,7 @@ export const Reports = () => {
     useEffect(() => {
         const fetchLastWeekCounts = async () => {
             try {
-                const res = await fetch("http://localhost:3000/api/reports/last-week", {
-                    method: "GET",
-                    credentials: "include",
-                });
-                const data = await res.json();
+                const data = await api.get("/reports/last-week");
                 setLastWeekCount({
                     completed: [data.completed],
                     dismissed: [data.dismissed],
@@ -198,11 +195,7 @@ export const Reports = () => {
     useEffect(() => {
         const fetchMonthlyCounts = async () => {
             try {
-                const res = await fetch("http://localhost:3000/api/reports/monthly", {
-                    method: "GET",
-                    credentials: "include",
-                });
-                const data = await res.json();
+                const data = await api.get("/reports/monthly");
                 setMonthlyCount({
                     completed: [data.completed],
                     dismissed: [data.dismissed],
@@ -294,12 +287,7 @@ export const Reports = () => {
     useEffect(() => {
         const fetchCaseCounts = async () => {
             try {
-                const res = await fetch("http://localhost:3000/api/reports/case-counts", {
-                    method: "GET",
-                    credentials: "include",
-                });
-                if (!res.ok) throw new Error("Failed to fetch case counts");
-                const data = await res.json();
+                const data = await api.get("/reports/case-counts");
                 setCaseCounts(data);
             } catch (err) {
                 console.error("Error fetching case counts:", err);
@@ -312,10 +300,7 @@ export const Reports = () => {
     useEffect(() => {
         const fetchLogs = async () => {
             try {
-                const res = await fetch("http://localhost:3000/api/user-logs", { method: "GET", credentials: "include" });
-                const data = await res.json();
-
-                // filtering logs for completed, dismissed, and archived actions only and does not include the ones with "New allowed viewer(s)" text
+                const data = await api.get("/user-logs");
                 const filtered = data.filter(
                     (log) =>
                         /status: completed|status: dismissed|archived /i.test(log.user_log_action) &&
@@ -457,7 +442,7 @@ export const Reports = () => {
                                         <td className="flex items-center gap-2 p-2">
                                             {log.user_profile ? (
                                                 <img
-                                                    src={`http://localhost:3000${log.user_profile}` || defaultAvatar}
+                                                    src={`${api.baseUrl.replace(/\/api$/, '')}${log.user_profile}` || defaultAvatar}
                                                     alt={log.user_fullname}
                                                     className="h-8 w-8 rounded-full object-cover"
                                                 />

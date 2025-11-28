@@ -3,6 +3,7 @@ import { Pencil, Trash2, Eye, EyeOff, RefreshCcw, Search } from "lucide-react";
 import { useClickOutside } from "@/hooks/use-click-outside";
 import AddClient from "../../components/add-client";
 import { useAuth } from "@/context/auth-context";
+import api from "@/utils/api";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
@@ -33,26 +34,22 @@ const Client = () => {
     // Fetching clients, users, and contacts data for their relations
     const fetchAll = useCallback(async () => {
         try {
-            const clients_endpoint =
+            const clientsPath =
                 user?.user_role === "Admin" || user?.user_role === "Staff"
                     ? showAllClients
-                        ? "http://localhost:3000/api/all-clients"
-                        : "http://localhost:3000/api/clients"
-                    : `http://localhost:3000/api/clients/${user.user_id}`;
+                        ? "/all-clients"
+                        : "/clients"
+                    : `/clients/${user.user_id}`;
 
-            const [clientsRes, usersRes, contactsRes] = await Promise.all([
-                fetch(clients_endpoint, { credentials: "include" }),
-                fetch("http://localhost:3000/api/users", { credentials: "include" }),
-                fetch("http://localhost:3000/api/client-contacts", { credentials: "include" }),
+            const [clients, usersData, contacts] = await Promise.all([
+                api.get(clientsPath),
+                api.get("/users"),
+                api.get("/client-contacts"),
             ]);
 
-            if (!clientsRes.ok || !usersRes.ok || !contactsRes.ok) throw new Error("Failed to fetch one or more resources");
-
-            const [clients, users, contacts] = await Promise.all([clientsRes.json(), usersRes.json(), contactsRes.json()]);
-
-            setTableData(clients);
-            setUsers(users);
-            setClientContacts(contacts);
+            setTableData(Array.isArray(clients) ? clients : []);
+            setUsers(Array.isArray(usersData) ? usersData : []);
+            setClientContacts(Array.isArray(contacts) ? contacts : []);
         } catch (err) {
             console.error("Fetching error:", err);
             setError(err + ". You might want to check you server connection.");
@@ -92,25 +89,9 @@ const Client = () => {
         });
 
         try {
-            const res = await fetch(`http://localhost:3000/api/clients/${client.client_id}`, {
-                method: "PUT",
-                credentials: "include",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ ...editClient, client_last_updated_by: user.user_id }),
-            });
-
-            if (!res.ok) {
-                throw new Error("Failed to update client");
-            }
-
+            await api.put(`/clients/${client.client_id}`, { ...editClient, client_last_updated_by: user.user_id });
             toast.success("Client updated successfully!", { id: toastId, duration: 4000 });
-
-            // Refresh data
             await fetchAll();
-
-            // Close modal
             setEditClient(null);
         } catch (err) {
             console.error(err);
@@ -148,21 +129,8 @@ const Client = () => {
             });
 
             try {
-                const res = await fetch(`http://localhost:3000/api/clients/${client.client_id}`, {
-                    method: "PUT",
-                    credentials: "include",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ ...client, client_status: "Active", client_last_updated_by: user.user_id }),
-                });
-
-                if (!res.ok) {
-                    throw new Error("Failed to restore client");
-                }
-
+                await api.put(`/clients/${client.client_id}`, { ...client, client_status: "Active", client_last_updated_by: user.user_id });
                 toast.success("Client restored successfully!", { id: toastId, duration: 4000 });
-
                 await fetchAll();
             } catch (err) {
                 console.error(err);
@@ -187,24 +155,9 @@ const Client = () => {
         });
 
         try {
-            const res = await fetch(`http://localhost:3000/api/clients/${client.client_id}`, {
-                method: "PUT",
-                credentials: "include",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ ...client, client_status: "Removed", client_last_updated_by: user.user_id }),
-            });
-
-            if (!res.ok) {
-                throw new Error("Failed to remove client");
-            }
-
+            await api.put(`/clients/${client.client_id}`, { ...client, client_status: "Removed", client_last_updated_by: user.user_id });
             toast.success("Client removed successfully!", { id: toastId, duration: 4000 });
-
-            // Refresh data
             await fetchAll();
-
             closeRemoveModal();
         } catch (err) {
             console.error(err);

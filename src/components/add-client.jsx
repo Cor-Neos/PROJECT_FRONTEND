@@ -3,6 +3,7 @@ import { X, Trash2 } from "lucide-react";
 import { useClickOutside } from "@/hooks/use-click-outside";
 import { useAuth } from "@/context/auth-context";
 import toast from "react-hot-toast";
+import api from "@/utils/api";
 
 const AddClient = ({ AddClients, setAddClients, onClientAdded }) => {
     const { user } = useAuth();
@@ -90,18 +91,10 @@ const AddClient = ({ AddClients, setAddClients, onClientAdded }) => {
             }
 
             // 1. Create client
-            const resClient = await fetch("http://localhost:3000/api/clients", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({
-                    ...clientData,
-                    client_fullname: finalFullname,
-                }),
+            const newClient = await api.post("/clients", {
+                ...clientData,
+                client_fullname: finalFullname,
             });
-
-            if (!resClient.ok) throw new Error("Failed to add client");
-            const newClient = await resClient.json();
 
             // Notify parent
             onClientAdded(newClient);
@@ -114,16 +107,10 @@ const AddClient = ({ AddClients, setAddClients, onClientAdded }) => {
 
             // 2. Create contacts
             for (const c of contacts) {
-                const resContact = await fetch("http://localhost:3000/api/client-contacts", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify({
-                        ...c,
-                        client_id: newClient.client_id,
-                    }),
+                await api.post("/client-contacts", {
+                    ...c,
+                    client_id: newClient.client_id,
                 });
-                if (!resContact.ok) throw new Error("Failed to add one or more contacts");
             }
 
             if (contacts.length > 0) {

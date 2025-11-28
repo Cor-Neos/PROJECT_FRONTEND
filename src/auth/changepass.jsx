@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import boslogo from "@/assets/light_logo.png";
 import { Lock, Eye, EyeOff } from "lucide-react";
 import Spinner from "@/components/loading";
+import api from "@/utils/api";
 import toast from "react-hot-toast";
 
 export default function ChangePass() {
@@ -39,17 +40,15 @@ export default function ChangePass() {
         setLoading(true);
 
         try {
-            const res = await fetch("http://localhost:3000/api/reset-password", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ token, newPassword }),
-            });
+            try {
+                await api.post("/reset-password", { token, newPassword });
+            } catch (e) {
+                setError(e.data?.error || e.message || "Failed to reset password.");
+                setLoading(false);
+                return;
+            }
 
-            const data = await res.json();
-
-            if (!res.ok) {
-                setError(data.error || "Failed to reset password.");
-            } else {
+            {
                 setSuccess("Password changed successfully! You may now log in.");
 
                 const toastId = toast.loading("Changing password...", {

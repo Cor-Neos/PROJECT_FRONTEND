@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { X } from "lucide-react";
 import toast from "react-hot-toast";
+import api from "@/utils/api";
 
 const DeleteDocumentModal = ({ doc, onClose, onDeleted }) => {
     const [submitting, setSubmitting] = useState(false);
@@ -10,14 +11,7 @@ const DeleteDocumentModal = ({ doc, onClose, onDeleted }) => {
         setSubmitting(true);
         const toastId = toast.loading("Deleting document...", { duration: 4000 });
         try {
-            const res = await fetch(`http://localhost:3000/api/documents/${doc.doc_id}`, {
-                method: "DELETE",
-                credentials: "include",
-            });
-            if (!res.ok) {
-                const t = await res.text().catch(() => "");
-                throw new Error(t || "Failed to delete document");
-            }
+            await api.del(`/documents/${doc.doc_id}`);
             toast.success("Document deleted", { id: toastId, duration: 3000 });
             if (onDeleted) onDeleted();
         } catch (err) {

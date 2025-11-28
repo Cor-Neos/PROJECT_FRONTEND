@@ -4,6 +4,7 @@ import Column from "@/components/tasking/column";
 import { DndContext } from "@dnd-kit/core";
 import toast from "react-hot-toast";
 import { useAuth } from "@/context/auth-context";
+import api from "@/utils/api";
 import { useNavigate } from "react-router-dom";
 
 export const Tasks = () => {
@@ -17,28 +18,16 @@ export const Tasks = () => {
     useEffect(() => {
         const fetchTasks = async () => {
             try {
-                const task_endpoint =
-                    user.user_role === "Admin"
-                        ? "http://localhost:3000/api/documents"
-                        : `http://localhost:3000/api/documents/task/user/${user.user_id}`;
-
-                const res = await fetch(task_endpoint, {
-                    method: "GET",
-                    credentials: "include",
-                });
-
-                if (!res.ok) throw new Error("Failed to fetch tasks");
-
-                const data = await res.json();
+                const path = user.user_role === "Admin" ? "/documents" : `/documents/task/user/${user.user_id}`;
+                const data = await api.get(path);
                 const taskData = data.filter((doc) => doc.doc_type === "Task");
                 setTasks(taskData);
             } catch (error) {
                 console.error("Error fetching tasks:", error);
             }
         };
-
         fetchTasks();
-    }, []);
+    }, [user.user_role, user.user_id]);
 
     // Handle drag end event to update task status
     function handleDragEnd(event) {
@@ -53,14 +42,9 @@ export const Tasks = () => {
         try {
             const updatedTasks = tasks.map((task) => {
                 if (task.doc_id === taskId && task.doc_status !== newStatus) {
-                    fetch(`http://localhost:3000/api/documents/${taskId}`, {
-                        method: "PUT",
-                        headers: { "Content-Type": "application/json" },
-                        credentials: "include",
-                        body: JSON.stringify({ doc_status: newStatus, doc_last_updated_by: user.user_id }),
-                    })
-                        .then((res) => {
-                            if (!res.ok) throw new Error("Failed to update task status");
+                    api
+                        .put(`/documents/${taskId}`, { doc_status: newStatus, doc_last_updated_by: user.user_id })
+                        .then(() => {
                             toast.success("Task status updated successfully!", { id: toastId });
                         })
                         .catch((error) => {
@@ -111,14 +95,7 @@ export const Tasks = () => {
 
         const toastId = toast.loading("Updating task status...", { duration: 4000 });
         try {
-            const res = await fetch(`http://localhost:3000/api/documents/${taskId}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({ doc_status: newStatus, doc_last_updated_by: user.user_id }),
-            });
-            if (!res.ok) throw new Error("Failed to update task status");
-
+            await api.put(`/documents/${taskId}`, { doc_status: newStatus, doc_last_updated_by: user.user_id });
             setTasks((prev) => prev.map((t) => (t.doc_id === taskId ? { ...t, doc_status: newStatus } : t)));
             toast.success("Task status updated successfully!", { id: toastId });
         } catch (err) {
@@ -133,18 +110,12 @@ export const Tasks = () => {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const res = await fetch("http://localhost:3000/api/users", {
-                    method: "GET",
-                    credentials: "include",
-                });
-                if (!res.ok) throw new Error("Failed to fetch users");
-                const data = await res.json();
+                const data = await api.get("/users");
                 setUsers(data);
             } catch (error) {
                 console.error("Error fetching users:", error);
             }
         };
-
         fetchUsers();
     }, []);
 
@@ -544,7 +515,7 @@ export const Tasks = () => {
                                             <li key={index}>
                                                 <a
                                                     className="text-blue-600 hover:underline dark:text-blue-400"
-                                                    href={`http://localhost:3000${ref}`}
+                                                    href={`${api.baseUrl.replace(/\/api$/, '')}${ref}`}
                                                     target="_blank"
                                                     rel="noreferrer"
                                                 >

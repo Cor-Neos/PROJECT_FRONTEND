@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useState } from "react";
+import api from "../utils/api.js";
 import { NavLink } from "react-router-dom";
 import PropTypes from "prop-types";
 
@@ -21,13 +22,12 @@ export const Sidebar = forwardRef(({ collapsed }, ref) => {
 
         const fetchPendingCount = async () => {
             try {
-                const url =
+                const path =
                     user.user_role === "Admin"
-                        ? "http://localhost:3000/api/documents/count/pending-tasks"
-                        : `http://localhost:3000/api/documents/count/pending-tasks/${user.user_id}`;
+                        ? "/documents/count/pending-tasks"
+                        : `/documents/count/pending-tasks/${user.user_id}`;
 
-                const res = await fetch(url, { credentials: "include" });
-                const data = await res.json();
+                const data = await api.get(path);
 
                 // The API should return { count: number }
                 setPendingCount(data.count || "");

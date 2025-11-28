@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { X } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import toast from "react-hot-toast";
+import api from "@/utils/api";
 
 const RejectDocumentModal = ({ doc, onClose, onRejected }) => {
     const { user } = useAuth() || {};
@@ -19,14 +20,7 @@ const RejectDocumentModal = ({ doc, onClose, onRejected }) => {
                 doc_tag: "Rejected: " + reason,
             };
 
-            const res = await fetch(`http://localhost:3000/api/documents/${doc.doc_id}`, {
-                method: "PUT",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.error || "Failed to reject document");
+            await api.put(`/documents/${doc.doc_id}`, payload);
 
             toast.success("Document rejected", { id: toastId, duration: 3000 });
             if (onRejected) onRejected();

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useClickOutside } from "@/hooks/use-click-outside";
+import api from "@/utils/api";
 
 const EditCaseModal = ({ isOpen, onClose, caseData, onUpdate, user }) => {
     const modalRef = useRef();
@@ -28,18 +29,11 @@ const EditCaseModal = ({ isOpen, onClose, caseData, onUpdate, user }) => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [clientsRes, categoriesRes, typesRes, lawyersRes] = await Promise.all([
-                    fetch("http://localhost:3000/api/clients", { credentials: "include" }),
-                    fetch("http://localhost:3000/api/case-categories", { credentials: "include" }),
-                    fetch("http://localhost:3000/api/case-category-types", { credentials: "include" }),
-                    fetch("http://localhost:3000/api/lawyer-specializations", { credentials: "include" }),
-                ]);
-
                 const [clientsData, categoriesData, typesData, lawyersData] = await Promise.all([
-                    clientsRes.json(),
-                    categoriesRes.json(),
-                    typesRes.json(),
-                    lawyersRes.json(),
+                    api.get("/clients"),
+                    api.get("/case-categories"),
+                    api.get("/case-category-types"),
+                    api.get("/lawyer-specializations"),
                 ]);
 
                 setClients(clientsData);

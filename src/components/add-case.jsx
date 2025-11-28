@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
+import api from "../utils/api.js";
 
 const AddNewCase = ({ isModalOpen, setIsModalOpen, handleAddCase, newCase, setNewCase, addCaseModalRef, user }) => {
     if (!isModalOpen) return null;
@@ -12,23 +13,10 @@ const AddNewCase = ({ isModalOpen, setIsModalOpen, handleAddCase, newCase, setNe
     useEffect(() => {
         const fetchClientsAndLawyers = async () => {
             try {
-                const [clientsRes, lawyersRes] = await Promise.all([
-                    fetch("http://localhost:3000/api/clients", {
-                        method: "GET",
-                        credentials: "include",
-                    }),
-                    fetch("http://localhost:3000/api/lawyer-specializations", {
-                        method: "GET",
-                        credentials: "include",
-                    }),
+                const [clientsData, lawyersData] = await Promise.all([
+                    api.get("/clients"),
+                    api.get("/lawyer-specializations"),
                 ]);
-
-                if (!clientsRes.ok || !lawyersRes.ok) {
-                    throw new Error("Failed to fetch clients and/or lawyers");
-                }
-
-                const clientsData = await clientsRes.json();
-                const lawyersData = await lawyersRes.json();
                 setClients(clientsData);
                 setLawyers(lawyersData);
             } catch (error) {
@@ -42,22 +30,10 @@ const AddNewCase = ({ isModalOpen, setIsModalOpen, handleAddCase, newCase, setNe
     useEffect(() => {
         const fetchCaseCategoriesAndTypes = async () => {
             try {
-                const [categoriesRes, typesRes] = await Promise.all([
-                    fetch("http://localhost:3000/api/case-categories", {
-                        method: "GET",
-                        credentials: "include",
-                    }),
-                    fetch("http://localhost:3000/api/case-category-types", {
-                        method: "GET",
-                        credentials: "include",
-                    }),
+                const [categoriesData, typesData] = await Promise.all([
+                    api.get("/case-categories"),
+                    api.get("/case-category-types"),
                 ]);
-
-                if (!categoriesRes.ok || !typesRes.ok) {
-                    throw new Error("Failed to fetch case categories or types");
-                }
-                const categoriesData = await categoriesRes.json();
-                const typesData = await typesRes.json();
                 setCaseCategories(categoriesData);
                 setCaseCategoryTypes(typesData);
             } catch (error) {

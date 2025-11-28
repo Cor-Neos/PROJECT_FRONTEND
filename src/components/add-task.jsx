@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/auth-context.jsx";
 import toast from "react-hot-toast";
 import Spinner from "./loading.jsx";
+import api from "../utils/api";
 
 export default function AddTask({ caseId, onClose, onAdded }) {
     const { user } = useAuth() || {};
@@ -97,11 +98,7 @@ export default function AddTask({ caseId, onClose, onAdded }) {
         setLoadingDocs(true);
         setError("");
         try {
-            const res = await fetch(`http://localhost:3000/api/case/documents/${caseId}`, {
-                credentials: "include",
-            });
-            if (!res.ok) throw new Error(`Failed to load documents (${res.status})`);
-            const data = await res.json();
+            const data = await api.get(`/case/documents/${caseId}`);
             setDocs(Array.isArray(data) ? data : []);
         } catch (e) {
             setError(e.message || "Failed to load documents");
@@ -118,12 +115,7 @@ export default function AddTask({ caseId, onClose, onAdded }) {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const res = await fetch("http://localhost:3000/api/users", {
-                    method: "GET",
-                    credentials: "include",
-                });
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error || "Failed to fetch users.");
+                const data = await api.get("/users");
                 setUsers(data);
             } catch (error) {
                 console.error("Error fetching users:", error);
@@ -149,16 +141,7 @@ export default function AddTask({ caseId, onClose, onAdded }) {
             // append reference docs
             refDocs.forEach((f) => fd.append("doc_reference", f));
 
-            const res = await fetch("http://localhost:3000/api/documents", {
-                method: "POST",
-                credentials: "include",
-                body: fd,
-            });
-
-            if (!res.ok) {
-                const t = await res.text();
-                throw new Error(t || "Failed to create task document");
-            }
+            await api.post("/documents", fd);
 
             toast.success("Task document created successfully!", { id: toastId, duration: 4000 });
 
@@ -181,9 +164,8 @@ export default function AddTask({ caseId, onClose, onAdded }) {
             fetchDocuments();
             if (onAdded) onAdded();
         } catch (e) {
-            setError(e.message || "Submission failed");
+            setError(e.message || "Submission failed. Please try again.");
             console.error("Error submitting task document:", e);
-            setError("Submission failed. Please try again.");
             toast.error("Failed to submit task document.", { id: toastId, duration: 4000 });
         } finally {
             setSubmitting(false);
@@ -465,7 +447,7 @@ export default function AddTask({ caseId, onClose, onAdded }) {
                                         {d.doc_file ? (
                                             <a
                                                 className="text-blue-600 hover:underline"
-                                                href={`http://localhost:3000${d.doc_file}`}
+                                                href={`${api.baseUrl.replace(/\/api$/, "")}${d.doc_file}`}
                                                 target="_blank"
                                                 rel="noreferrer"
                                             >

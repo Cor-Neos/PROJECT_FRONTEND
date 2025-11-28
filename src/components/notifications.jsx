@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Trash2, Mail, MailOpen, X, Search, User } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
+import api from "../utils/api";
 
 const Notifications = () => {
     const { user } = useAuth();
@@ -15,13 +16,8 @@ const Notifications = () => {
     // Fetch notifications
     const fetchNotifications = async () => {
         try {
-            const res = await fetch(`http://localhost:3000/api/notifications/${user.user_id}`, {
-                method: "GET",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-            });
-            const data = await res.json();
-            if (res.ok) setNotifications(Array.isArray(data) ? data : []);
+            const data = await api.get(`/notifications/${user.user_id}`);
+            setNotifications(Array.isArray(data) ? data : []);
         } catch (err) {
             console.error("Error fetching notifications:", err);
             setNotifications([]);

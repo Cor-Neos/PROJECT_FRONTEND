@@ -19,6 +19,7 @@ import {
 import defaultAvatar from "@/assets/default-avatar.png";
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/context/auth-context";
+import api from "@/utils/api";
 
 const DashboardPage = () => {
     const { theme } = useTheme();
@@ -37,13 +38,11 @@ const DashboardPage = () => {
         pendingTasks: 0,
     });
 
-    // ---------- FETCH HELPER ----------
-    const fetchData = async (url, setter, fallback = 0) => {
+    // ---------- FETCH HELPER (centralized api) ----------
+    const fetchData = async (path, setter, fallback = 0) => {
         try {
-            const res = await fetch(url, { method: "GET", credentials: "include" });
-            if (!res.ok) throw new Error();
-            const data = await res.json();
-            setter(data.count ?? fallback);
+            const data = await api.get(path);
+            setter(data?.count ?? fallback);
         } catch {
             setter(fallback);
         }
@@ -52,7 +51,7 @@ const DashboardPage = () => {
     // ---------- USERS (ADMIN & SUPERLAWYER) ----------
     useEffect(() => {
         if (user?.user_role === "Admin" || user?.user_role === "SuperLawyer") {
-            fetchData("http://localhost:3000/api/users/count", (v) =>
+            fetchData("/users/count", (v) =>
                 setCounts((p) => ({ ...p, users: v }))
             );
         }
@@ -61,7 +60,7 @@ const DashboardPage = () => {
     // ---------- CLIENTS ----------
     useEffect(() => {
         if (user) {
-            fetchData("http://localhost:3000/api/clients/count", (v) =>
+            fetchData("/clients/count", (v) =>
                 setCounts((p) => ({ ...p, clients: v }))
             );
         }
@@ -73,8 +72,8 @@ const DashboardPage = () => {
 
         const endpoint =
             ["Admin", "Staff", "SuperLawyer"].includes(user.user_role)
-                ? "http://localhost:3000/api/cases/count/processing"
-                : `http://localhost:3000/api/cases/count/processing/user/${user.user_id}`;
+                ? "/cases/count/processing"
+                : `/cases/count/processing/user/${user.user_id}`;
 
         fetchData(endpoint, (v) =>
             setCounts((p) => ({ ...p, processingCases: v }))
@@ -87,8 +86,8 @@ const DashboardPage = () => {
 
         const endpoint =
             ["Admin", "Staff", "SuperLawyer"].includes(user.user_role)
-                ? "http://localhost:3000/api/cases/count/archived"
-                : `http://localhost:3000/api/cases/count/archived/user/${user.user_id}`;
+                ? "/cases/count/archived"
+                : `/cases/count/archived/user/${user.user_id}`;
 
         fetchData(endpoint, (v) =>
             setCounts((p) => ({ ...p, archivedCases: v }))
@@ -101,17 +100,17 @@ const DashboardPage = () => {
 
         const pendingTaskUrl =
             ["Admin", "SuperLawyer"].includes(user.user_role)
-                ? "http://localhost:3000/api/documents/count/pending-tasks"
-                : `http://localhost:3000/api/documents/count/pending-tasks/${user.user_id}`;
+                ? "/documents/count/pending-tasks"
+                : `/documents/count/pending-tasks/${user.user_id}`;
 
         const processingDocumentsUrl =
             user.user_role === "Lawyer"
-                ? "http://localhost:3000/api/documents/count/processing/lawyer"
-                : "http://localhost:3000/api/documents/count/processing";
+                ? "/documents/count/processing/lawyer"
+                : "/documents/count/processing";
 
         const endpoints = [
             {
-                url: "http://localhost:3000/api/documents/count/for-approval",
+                url: "/documents/count/for-approval",
                 key: "docsForApproval",
             },
             {
@@ -137,16 +136,13 @@ const DashboardPage = () => {
 
         const fetchUserLogs = async () => {
             try {
-                const endpoint =
+                const path =
                     ["Admin", "SuperLawyer"].includes(user.user_role)
-                        ? "http://localhost:3000/api/user-logs"
-                        : `http://localhost:3000/api/user-logs/${user.user_id}`;
+                        ? "/user-logs"
+                        : `/user-logs/${user.user_id}`;
 
-                const res = await fetch(endpoint, { credentials: "include" });
-                if (!res.ok) throw new Error();
-
-                const data = await res.json();
-                setUserLogs(data);
+                const data = await api.get(path);
+                setUserLogs(Array.isArray(data) ? data : []);
             } catch { }
         };
 
@@ -157,19 +153,14 @@ const DashboardPage = () => {
     useEffect(() => {
         const load = async () => {
             try {
-                const res = await fetch(
-                    "http://localhost:3000/api/reports/case-counts-by-category",
-                    { credentials: "include" }
-                );
-                const data = await res.json();
-
+                const data = await api.get("/reports/case-counts-by-category");
                 setOverviewData([
-                    { name: "Civil", total: data.civil || 0 },
-                    { name: "Criminal", total: data.criminal || 0 },
-                    { name: "Special Proceedings", total: data.special_proceedings || 0 },
-                    { name: "Constitutional", total: data.constitutional || 0 },
-                    { name: "Jurisdictional", total: data.jurisdictional || 0 },
-                    { name: "Special Courts", total: data.special_courts || 0 },
+                    { name: "Civil", total: data?.civil || 0 },
+                    { name: "Criminal", total: data?.criminal || 0 },
+                    { name: "Special Proceedings", total: data?.special_proceedings || 0 },
+                    { name: "Constitutional", total: data?.constitutional || 0 },
+                    { name: "Jurisdictional", total: data?.jurisdictional || 0 },
+                    { name: "Special Courts", total: data?.special_courts || 0 },
                 ]);
             } catch { }
         };
@@ -320,8 +311,8 @@ const DashboardPage = () => {
                                     className="flex items-center justify-between gap-x-4 rounded-lg py-2 pr-2 hover:bg-slate-100 dark:hover:bg-slate-800"
                                 >
                                     <div className="flex items-center gap-x-4">
-                                        <img
-                                            src={log.user_profile ? `http://localhost:3000${log.user_profile}` : defaultAvatar}
+                                            <img
+                                                src={log.user_profile ? `${api.baseUrl.replace(/\/api$/, '')}${log.user_profile}` : defaultAvatar}
                                             alt={log.user_fullname || "User"}
                                             className="ml-2 size-10 rounded-full object-cover"
                                         />

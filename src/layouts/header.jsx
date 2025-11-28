@@ -6,6 +6,7 @@ import { getNavbarLinks } from "@/constants";
 
 import { ChevronsLeft, Settings, Search, Sun, Moon, Bell } from "lucide-react";
 import default_avatar from "@/assets/default-avatar.png";
+import api from "@/utils/api";
 
 import { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -64,13 +65,8 @@ export const Header = ({ collapsed, setCollapsed }) => {
     // fetch notification unread count
     const fetchUnreadCount = async () => {
         try {
-            const res = await fetch(`http://localhost:3000/api/notifications/unread-count/${user.user_id}`, {
-                credentials: "include",
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setUnreadCount(data.count || 0);
-            }
+            const data = await api.get(`/notifications/unread-count/${user.user_id}`);
+            setUnreadCount(data.count || 0);
         } catch (e) {
             console.error("Failed to count unread notification/s", e);
             setUnreadCount(0);
@@ -99,16 +95,16 @@ export const Header = ({ collapsed, setCollapsed }) => {
 
                 // Fetch in parallel
                 const [casesRes, clientsRes, docsRes] = await Promise.all([
-                    fetch(`http://localhost:3000/api/cases/search?q=${encodeURIComponent(term)}`, { credentials: "include" }).catch(() => null),
-                    fetch("http://localhost:3000/api/clients", { credentials: "include" }).catch(() => null),
-                    fetch("http://localhost:3000/api/documents", { credentials: "include" }).catch(() => null),
+                    api.get(`/cases/search?q=${encodeURIComponent(term)}`).catch(() => null),
+                    api.get("/clients").catch(() => null),
+                    api.get("/documents").catch(() => null),
                 ]);
 
                 if (!active) return;
 
                 // Cases
-                if (casesRes && casesRes.ok) {
-                    const cases = await casesRes.json();
+                if (casesRes) {
+                    const cases = casesRes;
                     (Array.isArray(cases) ? cases : []).forEach((c) => {
                         const label = c.ct_name ? `${c.ct_name} (Case #${c.case_id})` : `Case #${c.case_id}`;
                         results.push({
@@ -122,8 +118,8 @@ export const Header = ({ collapsed, setCollapsed }) => {
                 }
 
                 // Clients (filter client-side)
-                if (clientsRes && clientsRes.ok) {
-                    const clients = await clientsRes.json();
+                if (clientsRes) {
+                    const clients = clientsRes;
                     (Array.isArray(clients) ? clients : [])
                         .filter((cl) => {
                             const full = String(cl.client_fullname || `${cl.client_fname || ""} ${cl.client_lname || ""}`).toLowerCase();
@@ -142,8 +138,8 @@ export const Header = ({ collapsed, setCollapsed }) => {
                 }
 
                 // Documents (filter client-side)
-                if (docsRes && docsRes.ok) {
-                    const docs = await docsRes.json();
+                if (docsRes) {
+                    const docs = docsRes;
                     (Array.isArray(docs) ? docs : [])
                         .filter((d) => {
                             const hay = `${d.doc_name || ""} ${d.doc_type || ""} ${d.doc_tag || ""}`.toLowerCase();
@@ -286,7 +282,7 @@ export const Header = ({ collapsed, setCollapsed }) => {
                             Hi, {user.user_role === "Admin" ? "Super Lawyer" : user.user_role}
                         </span>
                         <img
-                            src={user?.user_profile ? `http://localhost:3000${user.user_profile}` : default_avatar}
+                            src={user?.user_profile ? `${api.baseUrl.replace(/\/api$/, '')}${user.user_profile}` : default_avatar}
                             alt="profile"
                             className="h-11 w-11 rounded-full object-cover outline outline-2 outline-gray-200 dark:outline-gray-500"
                         />

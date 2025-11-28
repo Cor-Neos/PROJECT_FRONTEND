@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import toast from "react-hot-toast";
+import api from "../utils/api";
 
 export default function EditDocument({ doc, users = [], onClose, onSaved }) {
     const { user } = useAuth();
@@ -142,18 +143,11 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
                 setExistingRefs((prev) => prev.filter((_, i) => i !== idx));
 
                 // Make backend call
-                const res = await fetch(`http://localhost:3000/api/documents/${doc.doc_id}/remove-reference`, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify({ referencePath: refToRemove }),
+                await api.put(`/documents/${doc.doc_id}/remove-reference`, {
+                    referencePath: refToRemove,
                 });
 
                 console.log("refToRemove", refToRemove, typeof refToRemove);
-
-                if (!res.ok) {
-                    throw new Error("Failed to remove reference from server");
-                }
 
                 toast.success("Reference removed successfully", { id: toastId, duration: 3000 });
             } catch (err) {
@@ -189,14 +183,7 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
             // Newly added reference files
             newRefFiles.forEach((f) => fd.append("doc_reference", f));
 
-            const res = await fetch(`http://localhost:3000/api/documents/${doc.doc_id}`, {
-                method: "PUT",
-                credentials: "include",
-                body: fd,
-            });
-
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.error || "Failed to update document");
+            await api.put(`/documents/${doc.doc_id}`, fd);
 
             toast.success("Task document updated", { id: toastId, duration: 3000 });
             if (onSaved) onSaved();
@@ -217,13 +204,7 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
             if (user?.user_id) fd.append("doc_submitted_by", user.user_id);
             if (newMainFile) fd.append("doc_file", newMainFile);
 
-            const res = await fetch(`http://localhost:3000/api/documents/${doc.doc_id}`, {
-                method: "PUT",
-                credentials: "include",
-                body: fd,
-            });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.error || "Failed to update document");
+            await api.put(`/documents/${doc.doc_id}`, fd);
 
             toast.success("Document updated", { id: toastId, duration: 4000 });
             if (onSaved) onSaved();
@@ -438,7 +419,7 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
                                         >
                                             <a
                                                 className="text-blue-600 hover:underline"
-                                                href={`http://localhost:3000${url}`}
+                                                href={`${api.baseUrl.replace(/\/api$/, "")}${url}`}
                                                 target="_blank"
                                                 rel="noreferrer"
                                             >
@@ -565,7 +546,7 @@ export default function EditDocument({ doc, users = [], onClose, onSaved }) {
                             <div className="mb-2 flex items-center justify-between rounded border px-2 py-1 text-sm dark:border-gray-600">
                                 <a
                                     className="text-blue-600 hover:underline"
-                                    href={`http://localhost:3000${doc.doc_file}`}
+                                    href={`${api.baseUrl.replace(/\/api$/, "")}${doc.doc_file}`}
                                     target="_blank"
                                     rel="noreferrer"
                                 >

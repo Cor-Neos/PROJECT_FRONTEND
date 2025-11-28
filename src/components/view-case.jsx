@@ -9,19 +9,11 @@ import AddDocument from "./add-document";
 import EditDocument from "./edit-document";
 import RejectDocumentModal from "./reject-document";
 import DeleteDocumentModal from "./delete-document";
+import { CASE_STAGES, getCaseStageMeta } from "@/constants";
+import api from "@/utils/api";
 
 const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) => {
     const { user } = useAuth();
-
-    // CASE TAGGING test data
-    const case_tag_list = [
-        { id: 1, name: "Case Intake" },
-        { id: 2, name: "Case Processing..." },
-        { id: 3, name: "High Priority" },
-    ];
-
-    // default case tag every case created
-    const case_tag = { id: 1, name: "Case Intake" };
 
     const modalRef = useRef(null);
     const fileInputRef = useRef(null);
@@ -46,13 +38,8 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
     useEffect(() => {
         const fetchPayments = async () => {
             try {
-                const res = await fetch(`http://localhost:3000/api/payments/case/${selectedCase.case_id}`);
-                const data = await res.json();
-                if (res.ok) {
-                    setPayments(data);
-                } else {
-                    console.error("Failed to fetch payments:", data.error);
-                }
+                const data = await api.get(`/payments/case/${selectedCase.case_id}`);
+                setPayments(data);
             } catch (error) {
                 console.error("Error fetching payments:", error);
             }
@@ -67,14 +54,8 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const res = await fetch("http://localhost:3000/api/users", { method: "GET", credentials: "include" });
-                const data = await res.json();
-
-                if (!res.ok) {
-                    throw new Error(data.error || "Failed to fetch users.");
-                } else {
-                    setUsers(data);
-                }
+                const data = await api.get("/users");
+                setUsers(data);
             } catch (error) {
                 console.error("Error fetching users:", error);
             }
@@ -84,15 +65,7 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
 
     const fetchDocuments = async () => {
         try {
-            const res = await fetch(`http://localhost:3000/api/case/documents/${selectedCase.case_id}`, {
-                method: "GET",
-                credentials: "include",
-            });
-            const data = await res.json();
-
-            if (!res.ok) {
-                throw new Error(data.error || "Failed to fetch documents.");
-            }
+            const data = await api.get(`/case/documents/${selectedCase.case_id}`);
             setDocuments(data);
         } catch (error) {
             console.error("Error fetching documents:", error);
@@ -141,8 +114,8 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
         const lawyer = tableData.find((u) => u.user_id === lawyerId);
         return lawyer
             ? `${lawyer.user_fname || ""} ${lawyer.user_mname ? lawyer.user_mname[0] + "." : ""} ${lawyer.user_lname || ""}`
-                  .replace(/\s+/g, " ")
-                  .trim()
+                .replace(/\s+/g, " ")
+                .trim()
             : "Unassigned";
     };
 
@@ -173,28 +146,18 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
                 duration: 4000,
             });
 
-            const res = await fetch(`http://localhost:3000/api/cases/${selectedCase.case_id}`, {
-                method: "PUT",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    ...updatedCase,
-                    case_status:
-                        type === "close"
-                            ? "Completed"
-                            : type === "dismiss"
-                              ? "Dismissed"
-                              : type === "archive" && selectedCase.case_status === "Completed"
+            await api.put(`/cases/${selectedCase.case_id}`, {
+                ...updatedCase,
+                case_status:
+                    type === "close"
+                        ? "Completed"
+                        : type === "dismiss"
+                            ? "Dismissed"
+                            : type === "archive" && selectedCase.case_status === "Completed"
                                 ? "Archived (Completed)"
                                 : "Archived (Dismissed)",
-                    last_updated_by: user.user_id,
-                }),
+                last_updated_by: user.user_id,
             });
-
-            const data = await res.json();
-            if (!res.ok) {
-                throw new Error(data.error || "Failed to update case status.");
-            }
 
             toast.success(`Case ${type === "close" ? "closed" : type === "dismiss" ? "dismissed" : "archived"} successfully!`, {
                 id: toastId,
@@ -225,21 +188,66 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
 
                 {!showPayments ? (
                     <>
-                        <div className="mb-4 flex items-center justify-between">
-                            <div>
-                                <h2 className="text-2xl font-semibold">Case {selectedCase.case_id}</h2>
-                                <div className="mt-1 flex gap-4 text-sm text-gray-600 dark:text-gray-300">
+                        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="flex-1">
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <h2 className="text-2xl font-semibold">Case {selectedCase.case_id}</h2>
+                                    {/* Stage Badge (read-only) */}
+                                    {(() => {
+                                        // Prefer explicit case_stage if backend provides it later
+                                        const stageKey = selectedCase.case_stage || null;
+                                        const meta = getCaseStageMeta(stageKey);
+                                        const label = meta?.label || "Unspecified";
+                                        const color = meta?.color || "bg-slate-400";
+                                        return (
+                                            <span
+                                                title={meta ? `Stage: ${meta.label}` : "Stage not set"}
+                                                className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium text-white ${color}`}
+                                            >
+                                                {label}
+                                            </span>
+                                        );
+                                    })()}
+                                </div>
+                                <div className="mt-1 flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-300">
                                     <span>Cabinet #: {selectedCase.case_cabinet}</span>
                                     {selectedCase.case_drawer && <span>Drawer #: {selectedCase.case_drawer}</span>}
                                 </div>
                             </div>
-                            <div className="mr-7 flex items-center gap-1 text-sm text-slate-500">
-                                <MapPin
-                                    size={20}
-                                    strokeWidth={2}
-                                    className="text-red-400 dark:text-red-700"
-                                />
+                            <div className="mr-0 flex items-center gap-1 text-sm text-slate-500 sm:mr-7">
+                                <MapPin size={20} strokeWidth={2} className="text-red-400 dark:text-red-700" />
                                 <span>{selectedCase.branch_name}</span>
+                            </div>
+                        </div>
+
+                        {/* Compact Stage Stepper (read-only) */}
+                        <div className="mb-6 overflow-x-auto">
+                            <div className="min-w-[560px]">
+                                {(() => {
+                                    const stageKey = selectedCase.case_stage || null;
+                                    const currentIndex = stageKey ? CASE_STAGES.findIndex((s) => s.key === stageKey) : -1;
+                                    return (
+                                        <ol className="flex items-center gap-4">
+                                            {CASE_STAGES.map((s, idx) => {
+                                                const isDone = currentIndex >= 0 && idx < currentIndex;
+                                                const isCurrent = currentIndex === idx;
+                                                const dotColor = isCurrent ? s.color : isDone ? "bg-emerald-600" : "bg-slate-300 dark:bg-slate-600";
+                                                const textColor = isCurrent || isDone ? "text-slate-900 dark:text-slate-100" : "text-slate-500";
+                                                return (
+                                                    <li key={s.key} className="flex items-center">
+                                                        <div className="flex flex-col items-center">
+                                                            <div className={`h-3 w-3 rounded-full ${dotColor}`} />
+                                                            <span className={`mt-2 whitespace-nowrap text-[11px] ${textColor}`}>{s.label}</span>
+                                                        </div>
+                                                        {idx < CASE_STAGES.length - 1 && (
+                                                            <div className={`mx-2 h-[2px] w-10 ${currentIndex > idx ? "bg-emerald-600" : "bg-slate-300 dark:bg-slate-600"}`} />
+                                                        )}
+                                                    </li>
+                                                );
+                                            })}
+                                        </ol>
+                                    );
+                                })()}
                             </div>
                         </div>
 
@@ -307,9 +315,9 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
                                             <span className="font-semibold">
                                                 {selectedCase?.case_fee !== null && selectedCase?.case_fee !== undefined
                                                     ? new Intl.NumberFormat("en-PH", {
-                                                          style: "currency",
-                                                          currency: "PHP",
-                                                      }).format(Number(selectedCase.case_fee))
+                                                        style: "currency",
+                                                        currency: "PHP",
+                                                    }).format(Number(selectedCase.case_fee))
                                                     : "₱0.00"}
                                             </span>
                                         </div>
@@ -329,9 +337,9 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
                                             <span>
                                                 {selectedCase?.case_balance !== null && selectedCase?.case_balance !== undefined
                                                     ? new Intl.NumberFormat("en-PH", {
-                                                          style: "currency",
-                                                          currency: "PHP",
-                                                      }).format(Number(selectedCase.case_balance))
+                                                        style: "currency",
+                                                        currency: "PHP",
+                                                    }).format(Number(selectedCase.case_balance))
                                                     : "₱0.00"}
                                             </span>
                                         </div>
@@ -367,17 +375,16 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
                                     <p>
                                         <strong>Status:</strong>{" "}
                                         <span
-                                            className={`inline-block rounded-full px-3 py-1 text-xs font-medium capitalize ${
-                                                selectedCase.case_status === "Pending"
+                                            className={`inline-block rounded-full px-3 py-1 text-xs font-medium capitalize ${selectedCase.case_status === "Pending"
                                                     ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-700/20 dark:text-yellow-300"
                                                     : selectedCase.case_status === "Processing"
-                                                      ? "bg-blue-100 text-blue-700 dark:bg-blue-700/20 dark:text-blue-300"
-                                                      : selectedCase.case_status === "Completed"
-                                                        ? "bg-green-100 text-green-700 dark:bg-green-700/20 dark:text-green-300"
-                                                        : selectedCase.case_status === "Archived (Completed)"
-                                                          ? "bg-black text-white dark:bg-slate-200 dark:text-black"
-                                                          : "bg-gray-100 text-gray-700 dark:bg-gray-700/50 dark:text-gray-300"
-                                            }`}
+                                                        ? "bg-blue-100 text-blue-700 dark:bg-blue-700/20 dark:text-blue-300"
+                                                        : selectedCase.case_status === "Completed"
+                                                            ? "bg-green-100 text-green-700 dark:bg-green-700/20 dark:text-green-300"
+                                                            : selectedCase.case_status === "Archived (Completed)"
+                                                                ? "bg-black text-white dark:bg-slate-200 dark:text-black"
+                                                                : "bg-gray-100 text-gray-700 dark:bg-gray-700/50 dark:text-gray-300"
+                                                }`}
                                         >
                                             {selectedCase.case_status}
                                         </span>
@@ -449,8 +456,8 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
                                                     {doc.doc_status === "todo"
                                                         ? "to do"
                                                         : doc.doc_status === "in_progress"
-                                                          ? "in progress"
-                                                          : doc.doc_status}
+                                                            ? "in progress"
+                                                            : doc.doc_status}
                                                 </td>
                                                 <td className="px-4 py-2">{doc.doc_due_date ? formatDateTime(doc.doc_due_date) : "N/A"}</td>
                                                 <td className="px-4 py-2">{getSubmitterName(doc.doc_submitted_by)}</td>
@@ -459,7 +466,7 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
                                                         {doc.doc_file && (
                                                             <button
                                                                 className="text-blue-600 hover:text-blue-800"
-                                                                onClick={() => window.open(`http://localhost:3000${doc.doc_file}`, "_blank")}
+                                                                onClick={() => window.open(`${api.baseUrl.replace(/\/api$/, '')}${doc.doc_file}`, "_blank")}
                                                                 title="View File"
                                                             >
                                                                 <Eye size={16} />
@@ -738,4 +745,4 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
     );
 };
 
-export default ViewModal;
+export default ViewModal;   

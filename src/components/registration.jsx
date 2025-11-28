@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import api from "../utils/api.js";
 import boslogo from "@/assets/boslogo_white.png";
 import { Mail, Lock, Eye, EyeOff, User, Phone, Briefcase, Image } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -33,12 +34,7 @@ const Register = () => {
     useEffect(() => {
         const fetchBranches = async () => {
             try {
-                const res = await fetch("http://localhost:3000/api/branches", {
-                    method: "GET",
-                    credentials: "include",
-                });
-
-                const data = await res.json();
+                const data = await api.get("/branches");
                 setBranches(data);
             } catch (err) {
                 console.error("Failed to load branches:", err);
@@ -68,37 +64,22 @@ const Register = () => {
         }
 
         try {
-            const res = await fetch("http://localhost:3000/api/users", {
-                method: "POST",
-                credentials: "include",
-                body: formData,
-            });
-
-            const data = await res.json();
-
-            if (res.ok) {
-                setMessage("✅ User successfully registered.");
-                toast.success("User successfully added!", {
-                    id: toastId,
-                    duration: 4000,
-                });
-
-                setFName("");
-                setMName("");
-                setLName("");
-                setEmail("");
-                setPassword("");
-                setPhone("");
-                setRole("Paralegal");
-                setBranchId("");
-                setProfile(null);
-                setPreview(null);
-            } else {
-                setMessage(data.error || "❌ Registration failed.");
-            }
+            const data = await api.post("/users", formData, { headers: {} });
+            setMessage("✅ User successfully registered.");
+            toast.success("User successfully added!", { id: toastId, duration: 4000 });
+            setFName("");
+            setMName("");
+            setLName("");
+            setEmail("");
+            setPassword("");
+            setPhone("");
+            setRole("Paralegal");
+            setBranchId("");
+            setProfile(null);
+            setPreview(null);
         } catch (err) {
             console.error(err);
-            setMessage("❌ An unexpected error occurred.");
+            setMessage(err?.data?.error || "❌ Registration failed.");
         }
     };
 

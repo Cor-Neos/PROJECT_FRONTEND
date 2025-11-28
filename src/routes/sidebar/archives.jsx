@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect, use } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Filter, X } from "lucide-react";
 import { useClickOutside } from "@/hooks/use-click-outside";
+import api from "../../utils/api.js";
 import ViewModal from "../../components/view-case";
 import { useAuth } from "@/context/auth-context";
 import { useNavigate } from "react-router-dom";
@@ -45,36 +46,12 @@ const Archives = () => {
         const fetchArchivedCases = async () => {
             try {
                 const endpoint =
-                    user.user_role === "Admin" ? "http://localhost:3000/api/cases" : `http://localhost:3000/api/cases/user/${user.user_id}`;
-
-                const res = await fetch(endpoint, {
-                    method: "GET",
-                    credentials: "include",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                });
-
-                const contentType = res.headers.get("content-type");
-                if (!res.ok) {
-                    throw new Error(`HTTP error! status: ${res.status}`);
-                }
-
-                if (!contentType || !contentType.includes("application/json")) {
-                    const text = await res.text();
-                    console.error("Server returned non-JSON:", text.slice(0, 200));
-                    throw new Error("Invalid JSON response from server");
-                }
-
-                const data = await res.json();
-
-                // Filter archived only
+                    user.user_role === "Admin" ? "/cases" : `/cases/user/${user.user_id}`;
+                const data = await api.get(endpoint);
                 const archived = data.filter(
                     (item) =>
-                        (item.case_status && item.case_status.toLowerCase() === "archived (completed)") ||
-                        item.case_status.toLowerCase() === "archived (dismissed)",
+                        item.case_status && ["archived (completed)", "archived (dismissed)"].includes(item.case_status.toLowerCase()),
                 );
-
                 setArchivedCases(archived);
             } catch (err) {
                 console.error("Fetch archived cases error:", err);
@@ -87,16 +64,7 @@ const Archives = () => {
     useEffect(() => {
         const fetchLawyers = async () => {
             try {
-                const res = await fetch("http://localhost:3000/api/users", {
-                    method: "GET",
-                    credentials: "include",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                });
-
-                if (!res.ok) throw new Error("Failed to fetch lawyers");
-                const data = await res.json();
+                const data = await api.get("/users");
                 setLawyers(data);
             } catch (err) {
                 console.error("Fetch lawyers error:", err);
@@ -122,22 +90,12 @@ const Archives = () => {
         const toastId = toast.loading("Unarchiving case...", { duration: 4000 });
 
         try {
-            const res = await fetch(`http://localhost:3000/api/cases/${caseToBeUnarchived.case_id}`, {
-                method: "PUT",
-                credentials: "include",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ ...caseToBeUnarchived, case_status: "Completed", last_updated_by: user.user_id }),
-            });
-
-            if (!res.ok) throw new Error("Failed to unarchive case");
+            await api.put(`/cases/${caseToBeUnarchived.case_id}`, { ...caseToBeUnarchived, case_status: "Completed", last_updated_by: user.user_id });
             setArchivedCases((prev) => prev.filter((item) => item.case_id !== caseToBeUnarchived.case_id));
-
             toast.success("Case unarchived successfully.", { id: toastId, duration: 4000 });
         } catch (err) {
             console.error("Error unarchiving case:", err);
-            toast.error("Error unarchiving case", { id: toastId, duration: 4000 });
+            toast.error(err?.data?.error || "Error unarchiving case", { id: toastId, duration: 4000 });
         }
     };
 

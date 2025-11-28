@@ -2,6 +2,7 @@ import React from "react";
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/auth-context.jsx";
 import defaultAvatar from "../assets/default-avatar.png";
+import api from "../utils/api";
 
 const ApprovedTasks = () => {
     const { user } = useAuth();
@@ -22,20 +23,9 @@ const ApprovedTasks = () => {
         const fetchApprovedTasks = async () => {
             try {
                 const task_endpoint =
-                    user.user_role === "Admin"
-                        ? "http://localhost:3000/api/documents"
-                        : `http://localhost:3000/api/documents/task/user/${user.user_id}`;
+                    user.user_role === "Admin" ? "/documents" : `/documents/task/user/${user.user_id}`;
 
-                const response = await fetch(task_endpoint, {
-                    method: "GET",
-                    credentials: "include",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                });
-
-                // Filter tasks with doc_status "approved"
-                const data = await response.json();
+                const data = await api.get(task_endpoint);
                 const approvedTasks = data.filter((task) => task.doc_status === "approved");
                 setApprovedTasks(approvedTasks);
                 setFilteredTasks(approvedTasks);
@@ -52,14 +42,7 @@ const ApprovedTasks = () => {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const response = await fetch("http://localhost:3000/api/users", {
-                    method: "GET",
-                    credentials: "include",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                });
-                const data = await response.json();
+                const data = await api.get("/users");
                 setUsers(Array.isArray(data) ? data : data.users || []);
             } catch (error) {
                 console.error("Error fetching users:", error);
@@ -143,7 +126,7 @@ const ApprovedTasks = () => {
     const getUserProfilePicture = (assignedById) => {
         if (!Array.isArray(users)) return defaultAvatar;
         const user = users.find((u) => u.user_id === assignedById);
-        return user?.user_profile ? `http://localhost:3000${user.user_profile}` : defaultAvatar;
+        return user?.user_profile ? `${api.baseUrl.replace(/\/api$/, "")}${user.user_profile}` : defaultAvatar;
     };
 
     return (

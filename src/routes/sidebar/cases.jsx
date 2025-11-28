@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import api from "../../utils/api.js";
 import { Pencil, Eye, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useClickOutside } from "@/hooks/use-click-outside";
@@ -75,20 +76,12 @@ const Cases = () => {
     // Fetch cases data from API
     const fetchCases = async () => {
         try {
-            const cases_endpoint = user?.user_role === "Admin" ? "/cases" : `/cases/user/${user?.user_id}`;
-
-            const response = await fetch(`http://localhost:3000/api${cases_endpoint}`, {
-                credentials: "include",
-            });
-
-            if (!response.ok) {
-                throw new Error("Failed to fetch cases");
-            }
-            const data = await response.json();
+            const casesEndpoint = user?.user_role === "Admin" ? "/cases" : `/cases/user/${user?.user_id}`;
+            const data = await api.get(casesEndpoint);
             setTableData(data);
         } catch (error) {
             console.error("Error fetching cases:", error);
-            setError(error.message + ". You might want to check your server connection.");
+            setError((error?.data?.error || error.message) + ". You might want to check your server connection.");
         }
     };
 
@@ -136,17 +129,7 @@ const Cases = () => {
                 case_fee: newCase.case_fee ? parseFloat(newCase.case_fee) : null,
             };
 
-            const res = await fetch("http://localhost:3000/api/cases", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
-
-            if (!res.ok) {
-                throw new Error("Failed to add case");
-            }
-
-            const addedCase = await res.json();
+            const addedCase = await api.post("/cases", payload);
             setTableData((prevData) => [addedCase, ...prevData]);
             setIsModalOpen(false);
             setNewCase({
@@ -174,22 +157,12 @@ const Cases = () => {
     const handleCaseUpdate = async (updatedCase) => {
         const toastId = toast.loading("Updating case...");
         try {
-            const res = await fetch(`http://localhost:3000/api/cases/${updatedCase.case_id}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...updatedCase, last_updated_by: user.user_id }),
-            });
-
-            if (!res.ok) throw new Error("Failed to update case.");
-
-            const updated = await res.json();
-
+            const updated = await api.put(`/cases/${updatedCase.case_id}`, { ...updatedCase, last_updated_by: user.user_id });
             setTableData((prevData) => prevData.map((c) => (c.case_id === updated.case_id ? updated : c)));
-
             toast.success("Case updated successfully!", { id: toastId });
         } catch (error) {
             console.error("Error updating case:", error);
-            toast.error("Failed to update case.", { id: toastId });
+            toast.error(error?.data?.error || "Failed to update case.", { id: toastId });
         }
     };
 

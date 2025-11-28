@@ -1,4 +1,5 @@
 import { useState } from "react";
+import api from "../utils/api.js";
 import boslogo from "@/assets/light_logo.png";
 import { Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -19,29 +20,13 @@ export default function ForgotPassword() {
         setError("");
         setMessage("");
         try {
-            const res = await fetch("http://localhost:3000/api/forgot-password", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email }),
-            });
-            const data = await res.json();
-            if (!res.ok) {
-                setError(data.error || "Failed to send reset link.");
-            } else {
-                setMessage(`A reset link has been sent to ${email}`);
-
-                const toastId = toast.loading("Sending reset link...", {
-                    duration: 4000,
-                });
-
-                toast.success("Reset link sent successfully!", {
-                    id: toastId,
-                    duration: 4000,
-                });
-                setEmail("");
-            }
+            const data = await api.post("/forgot-password", { email });
+            setMessage(`A reset link has been sent to ${email}`);
+            const toastId = toast.loading("Sending reset link...", { duration: 4000 });
+            toast.success("Reset link sent successfully!", { id: toastId, duration: 4000 });
+            setEmail("");
         } catch (err) {
-            setError("Something went wrong. Please try again.");
+            setError(err?.data?.error || "Failed to send reset link.");
         }
         setLoading(false);
     };

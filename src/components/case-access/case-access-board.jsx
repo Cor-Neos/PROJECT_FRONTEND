@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import api from "@/utils/api";
 import { DndContext, useDraggable, useDroppable, PointerSensor, useSensor, useSensors, DragOverlay } from "@dnd-kit/core";
 import toast from "react-hot-toast";
 
@@ -74,13 +75,7 @@ export default function CaseAccessBoard({ users = [], apiBase = "", currentUserR
 
     const updateRole = async (userId, newRole) => {
         try {
-            const res = await fetch(`${apiBase}/users/${userId}/role`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({ user_role: newRole }),
-            });
-            if (!res.ok) throw new Error("Failed to update role");
+            await api.put(`/users/${userId}/role`, { user_role: newRole });
             return true;
         } catch (e) {
             console.error(e);

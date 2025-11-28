@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Eye, Trash2, Search } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
+import api from "@/utils/api";
 import toast from "react-hot-toast";
 
 export const Payments = () => {
@@ -34,22 +35,9 @@ export const Payments = () => {
     useEffect(() => {
         const fetchCases = async () => {
             try {
-                const cases_endpoint = user.user_role === "Admin" ? "cases" : "cases/user/" + user.user_id;
-                const res = await fetch("http://localhost:3000/api/" + cases_endpoint, {
-                    method: "GET",
-                    credentials: "include",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                });
-
-                const data = await res.json();
-                if (res.ok) {
-                    // setCases(data);
-                    setCases(data.filter((c) => c.case_balance > 0));
-                } else {
-                    console.error("Failed to fetch cases:", data.error);
-                }
+                const path = user.user_role === "Admin" ? "/cases" : `/cases/user/${user.user_id}`;
+                const data = await api.get(path);
+                setCases(Array.isArray(data) ? data.filter((c) => c.case_balance > 0) : []);
             } catch (err) {
                 console.error("Error fetching cases:", err);
             }
@@ -62,22 +50,9 @@ export const Payments = () => {
     useEffect(() => {
         const fetchPayments = async () => {
             try {
-                const payment_endpoint = user.user_role === "Admin" ? "payments" : "payments/lawyer/" + user.user_id;
-
-                const response = await fetch(`http://localhost:3000/api/${payment_endpoint}`, {
-                    method: "GET",
-                    credentials: "include",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                });
-
-                if (!response.ok) {
-                    throw new Error("Failed to fetch payments");
-                }
-
-                const data = await response.json();
-                setPaymentsData(data);
+                const path = user.user_role === "Admin" ? "/payments" : `/payments/lawyer/${user.user_id}`;
+                const data = await api.get(path);
+                setPaymentsData(Array.isArray(data) ? data : []);
             } catch (err) {
                 console.error(err);
                 setError("Failed to fetch payments. Please try again later.");
@@ -174,25 +149,15 @@ export const Payments = () => {
 
             console.log("Sending payment data:", paymentData); // Debug log
 
-            const res = await fetch("http://localhost:3000/api/payments", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify(paymentData),
-            });
-
-            const data = await res.json();
-            console.log("Response status:", res.status); // Debug log
-            console.log("Response data:", data); // Debug log
-
-            if (res.ok) {
-                setPaymentsData((prev) => [...prev, data]);
+            try {
+                const created = await api.post("/payments", paymentData);
+                setPaymentsData((prev) => [...prev, created]);
                 toast.success("Payment added successfully!", { id: toastId, duration: 4000 });
                 setAddPayment(null);
                 setChequeDetails({ cheque_name: "", cheque_number: "" });
-            } else {
-                console.error("Payment failed:", data); // Debug log
-                toast.error(data.error || data.message || "Failed to add payment", { id: toastId });
+            } catch (e) {
+                console.error("Payment failed:", e);
+                toast.error(e.data?.error || e.message || "Failed to add payment", { id: toastId });
             }
         } catch (err) {
             console.error("Error adding payment:", err);
@@ -204,27 +169,17 @@ export const Payments = () => {
         if (window.confirm(`Are you sure you want to delete payment ID ${payment.payment_id}? This action cannot be undone.`)) {
             const toastId = toast.loading("Deleting payment...", { duration: 4000 });
 
-            try {
-                fetch(`http://localhost:3000/api/payments/${payment.payment_id}`, {
-                    method: "DELETE",
-                    credentials: "include",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                }).then((res) => {
-                    if (!res.ok) {
-                        throw new Error("Failed to delete payment");
-                    }
+            api
+                .del(`/payments/${payment.payment_id}`)
+                .then(() => {
+                    setPaymentsData((prev) => prev.filter((p) => p.payment_id !== payment.payment_id));
+                    toast.success("Payment deleted successfully!", { id: toastId, duration: 4000 });
+                })
+                .catch((err) => {
+                    console.error(err);
+                    setError("Failed to delete payment. Please try again later.");
+                    toast.error("Failed to delete payment.", { id: toastId, duration: 4000 });
                 });
-
-                setPaymentsData((prev) => prev.filter((p) => p.payment_id !== payment.payment_id));
-                toast.success("Payment deleted successfully!", { id: toastId, duration: 4000 });
-            } catch (err) {
-                console.error(err);
-                setError("Failed to delete payment. Please try again later.");
-                toast.error("Failed to delete payment.", { id: toastId, duration: 4000 });
-                return;
-            }
         }
     };
 

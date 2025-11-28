@@ -5,9 +5,10 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/auth-context";
 import default_avatar from "@/assets/default-avatar.png";
 import toast from "react-hot-toast";
+import api from "@/utils/api";
 
 const roles = ["All", "Admin", "Lawyer", "Paralegal", "Staff"];
-const API_BASE = "http://localhost:3000";
+// API_BASE replaced by centralized api client
 
 const Users = () => {
     const { user } = useAuth();
@@ -33,14 +34,7 @@ const Users = () => {
 
     const fetchUsers = useCallback(async () => {
         try {
-            const res = await fetch(`${API_BASE}/api/users`, {
-                method: "GET",
-                credentials: "include",
-            });
-
-            if (!res.ok) throw new Error("Failed to fetch users");
-
-            const data = await res.json();
+            const data = await api.get("/users");
             setUsers(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error("Failed to fetch users:", error);
@@ -105,21 +99,8 @@ const Users = () => {
                 branch_id: userToSuspend.branch_id,
             };
 
-            const res = await fetch(`${API_BASE}/api/users/${userToSuspend.user_id}`, {
-                method: "PUT",
-                credentials: "include",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(payload),
-            });
-
-            if (!res.ok) {
-                throw new Error("Failed to suspend user");
-            }
-
+            const updated = await api.put(`/users/${userToSuspend.user_id}`, payload);
             toast.success("User suspension successful!", { id: toastId, duration: 4000 });
-            const updated = await res.json();
 
             setUsers((prev) => prev.map((u) => (u.user_id === updated.user_id ? updated : u)));
 
@@ -152,21 +133,8 @@ const Users = () => {
                     branch_id: u.branch_id,
                 };
 
-                const res = await fetch(`${API_BASE}/api/users/${u.user_id}`, {
-                    method: "PUT",
-                    credentials: "include",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(payload),
-                });
-
-                if (!res.ok) {
-                    throw new Error("Failed to activate user");
-                }
-
+                const updated = await api.put(`/users/${u.user_id}`, payload);
                 toast.success("User activation successful!", { id: toastId, duration: 4000 });
-                const updated = await res.json();
 
                 setUsers((prev) => prev.map((u) => (u.user_id === updated.user_id ? updated : u)));
             } catch (err) {
@@ -200,20 +168,8 @@ const Users = () => {
                 branch_id: userToEdit.branch_id,
             };
 
-            const res = await fetch(`${API_BASE}/api/users/${userToEdit.user_id}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify(payload),
-            });
-
-            if (!res.ok) {
-                console.error("Failed to update user");
-                return;
-            }
-
+            const updated = await api.put(`/users/${userToEdit.user_id}`, payload);
             toast.success("User updated successfully!", { id: toastId, duration: 4000 });
-            const updated = await res.json();
 
             setUsers((prev) => prev.map((u) => (u.user_id === updated.user_id ? updated : u)));
             closeEditModal();
@@ -327,19 +283,19 @@ const Users = () => {
                                         className="border-t border-gray-200 hover:bg-blue-50 dark:border-slate-700 dark:hover:bg-blue-950"
                                     >
                                         <td className="flex items-center gap-3 px-4 py-3">
-                                            <img
-                                                src={u.user_profile ? `${API_BASE}${u.user_profile}` : default_avatar}
-                                                alt={`${u.user_fname || ""} ${u.user_lname || ""}`.trim()}
-                                                className={`h-10 w-10 rounded-full border-2 object-cover p-0.5 ${
-                                                    u.user_status === "Active"
-                                                        ? "border-green-500"
-                                                        : u.user_status === "Pending"
-                                                          ? "border-yellow-500"
-                                                          : u.user_status === "Suspended"
-                                                            ? "border-red-500"
-                                                            : "border-gray-300"
-                                                }`}
-                                            />
+                                                                                        <img
+                                                                                                src={u.user_profile ? `${api.baseUrl.replace(/\/api$/, '')}${u.user_profile}` : default_avatar}
+                                                                                                alt={`${u.user_fname || ""} ${u.user_lname || ""}`.trim()}
+                                                                                                className={`h-10 w-10 rounded-full border-2 object-cover p-0.5 ${
+                                                                                                        u.user_status === "Active"
+                                                                                                                ? "border-green-500"
+                                                                                                                : u.user_status === "Pending"
+                                                                                                                    ? "border-yellow-500"
+                                                                                                                    : u.user_status === "Suspended"
+                                                                                                                        ? "border-red-500"
+                                                                                                                        : "border-gray-300"
+                                                                                                }`}
+                                                                                        />
                                             <span className="font-medium">
                                                 {`${u.user_fname || ""} ${u.user_mname || ""} ${u.user_lname || ""}`.replace(/\s+/g, " ").trim()}
                                             </span>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Trash2, FileText, Search, Filter, X } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
+import api from "@/utils/api";
 import AddDocument from "@/components/add-document.jsx";
 import toast from "react-hot-toast";
 
@@ -31,18 +32,13 @@ const Documents = () => {
     const fetchDocs = async () => {
         setError("");
         try {
-            const doc_endpoint =
+            const path =
                 user.user_role === "Admin"
-                    ? "http://localhost:3000/api/documents"
+                    ? "/documents"
                     : user.user_role === "Lawyer"
-                        ? `http://localhost:3000/api/documents/lawyer/${user.user_id}`
-                        : `http://localhost:3000/api/documents/submitter/${user.user_id}`;
-
-            const res = await fetch(doc_endpoint, {
-                credentials: "include",
-            });
-            if (!res.ok) throw new Error(`Failed to load documents (${res.status})`);
-            const data = await res.json();
+                        ? `/documents/lawyer/${user.user_id}`
+                        : `/documents/submitter/${user.user_id}`;
+            const data = await api.get(path);
             setDocuments(Array.isArray(data) ? data : []);
         } catch (e) {
             setError(e.message || "Failed to load documents");
@@ -59,9 +55,7 @@ const Documents = () => {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const res = await fetch("http://localhost:3000/api/users", { credentials: "include" });
-                if (!res.ok) throw new Error("Failed to load users");
-                const data = await res.json();
+                const data = await api.get("/users");
                 setUsers(Array.isArray(data) ? data : []);
             } catch {
                 setUsers([]);
@@ -76,12 +70,7 @@ const Documents = () => {
             setCasesError("");
             setCasesLoading(true);
             try {
-                const res = await fetch("http://localhost:3000/api/cases", {
-                    method: "GET",
-                    credentials: "include",
-                });
-                if (!res.ok) throw new Error("Failed to load cases");
-                const data = await res.json();
+                const data = await api.get("/cases");
                 setCases(Array.isArray(data) ? data : []);
             } catch (e) {
                 setCasesError(e.message || "Unable to load cases");
@@ -101,25 +90,20 @@ const Documents = () => {
 
     const handleDelete = () => {
         if (docToDelete) {
-            try {
-                const deleteDocument = async () => {
-                    const res = await fetch(`http://localhost:3000/api/documents/${docToDelete.doc_id}`, {
-                        method: "DELETE",
-                        credentials: "include",
-                    });
-                    if (!res.ok) throw new Error(`Failed to delete document (${res.status})`);
-                    // Refresh document list
+            const deleteDocument = async () => {
+                try {
+                    await api.del(`/documents/${docToDelete.doc_id}`);
                     fetchDocs();
-                    setDocuments(documents.filter((doc) => doc.doc_id !== docToDelete.doc_id));
+                    setDocuments((prev) => prev.filter((doc) => doc.doc_id !== docToDelete.doc_id));
                     setDocToDelete(null);
                     setShowDeleteModal(false);
-                };
-                deleteDocument();
-            } catch (e) {
-                setError(e.message || "Failed to delete document");
-                toast.error("Failed to delete document");
-                console.error(e);
-            }
+                } catch (e) {
+                    setError(e.message || "Failed to delete document");
+                    toast.error("Failed to delete document");
+                    console.error(e);
+                }
+            };
+            deleteDocument();
         }
     };
 
@@ -248,7 +232,7 @@ const Documents = () => {
                                             <td className="flex justify-center gap-4 px-4 py-3">
                                                 <div className="flex items-center gap-3">
                                                     <a
-                                                        href={`http://localhost:3000${doc.doc_file}`}
+                                                        href={`${api.baseUrl.replace(/\/api$/, '')}${doc.doc_file}`}
                                                         target="_blank"
                                                         rel="noreferrer"
                                                         className="inline-flex items-center gap-1 rounded-md border border-blue-600 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800"

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import api from "../utils/api.js";
 import boslogo from "@/assets/light_logo.png";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -25,22 +26,7 @@ const Login = () => {
         const toastId = toast.loading("Authenticating...", { duration: 4000 });
 
         try {
-            const res = await fetch("http://localhost:3000/api/login", {
-                method: "POST",
-                credentials: "include",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ email, password }),
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                setError(data.error || "Login failed");
-                setLoading(false);
-                return;
-            }
+            const data = await api.post("/login", { email, password });
 
             // OTP required if user is not verified
             if (data.message === "OTP sent to your email" && data.user_id) {
@@ -70,7 +56,7 @@ const Login = () => {
             setLoading(false);
         } catch (err) {
             console.error("Login error:", err);
-            setError("Something went wrong. Please try again.");
+            setError(err?.data?.error || err.message || "Something went wrong. Please try again.");
             toast.error("Login failed. Please try again.", { id: toastId, duration: 4000 });
             setLoading(false);
         }
