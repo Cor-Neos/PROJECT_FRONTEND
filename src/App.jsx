@@ -29,7 +29,8 @@ import ChangePass from "./auth/changepass";
 import { Payments } from "./routes/sidebar/payments";
 import Settings from "./components/settings";
 import ApprovedTasks from "./components/approved-tasks";
-import RecentlyDeleted from "./components/recently-deleted";
+import CaseFolder from "./components/case-folder";
+import RecentlyDeleted from "./routes/sidebar/recently-deleted";
 
 export default function App() {
     const router = createBrowserRouter([
@@ -62,6 +63,7 @@ export default function App() {
                     children: [
                         { index: true, element: <DashboardPage /> },
                         { path: "cases", element: <Cases /> },
+                        { path: "cases/case-folder", element: <CaseFolder /> },
                         { path: "documents", element: <Documents /> },
                         { path: "clients", element: <Clients /> },
                         { path: "clients/contacts", element: <ClientContact /> },
@@ -78,7 +80,7 @@ export default function App() {
                         { path: "notifications", element: <Notifications /> },
                         { path: "notifications/notif-settings", element: <NotificationSettings /> },
                         { path: "payments", element: <Payments /> },
-                        { path: "trash", element: <RecentlyDeleted /> },
+                        { path: "trash", element: <RecentlyDeleted/> },
                         { path: "settings", element: <Settings /> },
                     ],
                 },

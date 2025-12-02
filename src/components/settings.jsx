@@ -81,6 +81,8 @@ const Settings = () => {
     const [customTypes, setCustomTypes] = useState([]);
     const [newCategoryName, setNewCategoryName] = useState("");
     const [newTypeName, setNewTypeName] = useState("");
+    const [newTypeMinFee, setNewTypeMinFee] = useState("");
+    const [newTypeMaxFee, setNewTypeMaxFee] = useState("");
 
     // New: form helpers for server add
     const [addCatLoading, setAddCatLoading] = useState(false);
@@ -507,36 +509,46 @@ const Settings = () => {
         }
     };
 
+    // adding a case type
     const addCustomType = async (e) => {
         e.preventDefault();
+
         const name = newTypeName.trim();
-        if (!name) return;
+        const minFee = newTypeMinFee.trim();
+        const maxFee = newTypeMaxFee.trim();
+
+        if (!name || !minFee || !maxFee) return;
+
         setAddTypeError("");
         setAddTypeLoading(true);
 
-        const toastId = toast.loading("Adding case type...", { duration: 3000 });
+        const toastId = toast.loading("Adding case type...");
 
         try {
-            const payload = { ct_name: name };
-            const cid = newTypeCategoryId ? Number(newTypeCategoryId) : null;
-            if (cid) payload.cc_id = cid;
+            const payload = {
+                ct_name: name,
+                ct_fee: { min: Number(minFee), max: Number(maxFee) }, // send as numbers
+                cc_id: newTypeCategoryId ? Number(newTypeCategoryId) : null,
+            };
+
             const created = await fetchJson(`${API_BASE}/case-category-types`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
             });
+
             setTypes((prev) => [created, ...prev]);
-            const next = [name, ...customTypes.filter((t) => t !== name)];
 
-            toast.success("Case type added successfully", { id: toastId, duration: 3000 });
+            toast.success("Case type added successfully", { id: toastId });
 
-            setCustomTypes(next);
-            saveCaseCustomPrefs(undefined, next);
+            // Reset fields
             setNewTypeName("");
             setNewTypeCategoryId("");
+            setNewTypeMinFee("");
+            setNewTypeMaxFee("");
         } catch (e) {
             setAddTypeError(e.message || "Failed to add type");
-            toast.error(e.message || "Failed to add type", { id: toastId, duration: 4000 });
+            toast.error(e.message || "Failed to add type", { id: toastId });
         } finally {
             setAddTypeLoading(false);
         }
@@ -1391,6 +1403,24 @@ const Settings = () => {
                                             placeholder="e.g., Theft, Contract Dispute"
                                             className="flex-1 rounded-lg border px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
                                         />
+                                        <div className="flex flex-col gap-2 sm:flex-row">
+                                            <input
+                                                type="number"
+                                                value={newTypeMinFee}
+                                                onChange={(e) => setNewTypeMinFee(e.target.value)}
+                                                placeholder="Min Fee"
+                                                className="flex-1 rounded-lg border px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
+                                            />
+
+                                            <input
+                                                type="number"
+                                                value={newTypeMaxFee}
+                                                onChange={(e) => setNewTypeMaxFee(e.target.value)}
+                                                placeholder="Max Fee"
+                                                className="flex-1 rounded-lg border px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
+                                            />
+                                        </div>
+
                                         <select
                                             value={newTypeCategoryId}
                                             onChange={(e) => setNewTypeCategoryId(e.target.value)}
@@ -1521,104 +1551,108 @@ const Settings = () => {
                     </SettingsCard>
 
                     {/* Existing Case Tags Section */}
-                    <SettingsCard
-                        title="Case Tags"
-                        actions={
-                            <button
-                                onClick={loadCaseTags}
-                                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
-                            >
-                                <RefreshCw size={14} /> Refresh
-                            </button>
-                        }
-                    >
-                        {caseTagsLoading ? (
-                            <p className="text-sm text-gray-500">Loading…</p>
-                        ) : caseTagsError ? (
-                            <p className="text-sm text-red-500">{caseTagsError}</p>
-                        ) : caseTags.length === 0 ? (
-                            <p className="text-sm text-gray-500">No case tags found.</p>
-                        ) : (
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                                {caseTags.map((tag) => {
-                                    const isEditing = editingCaseTagId === tag.ctag_id;
+                    <div className="w-full">
+                        <SettingsCard
+                            title="Case Tags"
+                            actions={
+                                <button
+                                    onClick={loadCaseTags}
+                                    className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
+                                >
+                                    <RefreshCw size={14} /> Refresh
+                                </button>
+                            }
+                        >
+                            {caseTagsLoading ? (
+                                <p className="text-sm text-gray-500">Loading…</p>
+                            ) : caseTagsError ? (
+                                <p className="text-sm text-red-500">{caseTagsError}</p>
+                            ) : caseTags.length === 0 ? (
+                                <p className="text-sm text-gray-500">No case tags found.</p>
+                            ) : (
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                    {caseTags.map((tag) => {
+                                        const isEditing = editingCaseTagId === tag.ctag_id;
 
-                                    return (
-                                        <div
-                                            key={tag.ctag_id}
-                                            className="group relative rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
-                                        >
-                                            {isEditing ? (
-                                                /* EDIT MODE */
-                                                <div className="space-y-4">
-                                                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Edit Case Tag</h4>
+                                        return (
+                                            <div
+                                                key={tag.ctag_id}
+                                                className="group relative rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
+                                            >
+                                                {isEditing ? (
+                                                    /* EDIT MODE */
+                                                    <div className="space-y-4">
+                                                        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Edit Case Tag</h4>
 
+                                                        <div className="space-y-3">
+                                                            <div>
+                                                                <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                                                                    Tag Name *
+                                                                </label>
+                                                                <input
+                                                                    type="text"
+                                                                    value={editingCaseTagName}
+                                                                    onChange={(e) => setEditingCaseTagName(e.target.value)}
+                                                                    className="w-full rounded-md border px-3 py-2 text-sm"
+                                                                />
+                                                            </div>
+
+                                                            <div>
+                                                                <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                                                                    Sequence Number
+                                                                </label>
+                                                                <input
+                                                                    type="number"
+                                                                    value={editingCaseTagSequence}
+                                                                    onChange={(e) => setEditingCaseTagSequence(e.target.value)}
+                                                                    className="w-full rounded-md border px-3 py-2 text-sm"
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex gap-2 border-t pt-2">
+                                                            <button
+                                                                onClick={saveEditCaseTag}
+                                                                className="flex-1 rounded-md bg-green-600 px-3 py-2 text-sm text-white"
+                                                            >
+                                                                Save Changes
+                                                            </button>
+
+                                                            <button
+                                                                onClick={cancelEditCaseTag}
+                                                                className="flex-1 rounded-md bg-gray-300 px-3 py-2 text-sm"
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    /* VIEW MODE */
                                                     <div className="space-y-3">
-                                                        <div>
-                                                            <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
-                                                                Tag Name *
-                                                            </label>
-                                                            <input
-                                                                type="text"
-                                                                value={editingCaseTagName}
-                                                                onChange={(e) => setEditingCaseTagName(e.target.value)}
-                                                                className="w-full rounded-md border px-3 py-2 text-sm"
-                                                            />
-                                                        </div>
+                                                        <div className="flex items-start justify-between">
+                                                            <div className="flex-1">
+                                                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                                                    {tag.ctag_name}
+                                                                </h3>
+                                                                <p className="text-xs text-gray-500">Sequence: #{tag.ctag_sequence_num}</p>
+                                                            </div>
 
-                                                        <div>
-                                                            <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
-                                                                Sequence Number
-                                                            </label>
-                                                            <input
-                                                                type="number"
-                                                                value={editingCaseTagSequence}
-                                                                onChange={(e) => setEditingCaseTagSequence(e.target.value)}
-                                                                className="w-full rounded-md border px-3 py-2 text-sm"
-                                                            />
+                                                            <button
+                                                                onClick={() => startEditCaseTag(tag)}
+                                                                className="rounded p-1.5 text-blue-600 opacity-0 group-hover:opacity-100"
+                                                            >
+                                                                <Edit2 size={16} />
+                                                            </button>
                                                         </div>
                                                     </div>
-
-                                                    <div className="flex gap-2 border-t pt-2">
-                                                        <button
-                                                            onClick={saveEditCaseTag}
-                                                            className="flex-1 rounded-md bg-green-600 px-3 py-2 text-sm text-white"
-                                                        >
-                                                            Save Changes
-                                                        </button>
-
-                                                        <button
-                                                            onClick={cancelEditCaseTag}
-                                                            className="flex-1 rounded-md bg-gray-300 px-3 py-2 text-sm"
-                                                        >
-                                                            Cancel
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                /* VIEW MODE */
-                                                <div className="space-y-3">
-                                                    <div className="flex items-start justify-between">
-                                                        <div className="flex-1">
-                                                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{tag.ctag_name}</h3>
-                                                            <p className="text-xs text-gray-500">Sequence: #{tag.ctag_sequence_num}</p>
-                                                        </div>
-
-                                                        <button
-                                                            onClick={() => startEditCaseTag(tag)}
-                                                            className="rounded p-1.5 text-blue-600 opacity-0 group-hover:opacity-100"
-                                                        >
-                                                            <Edit2 size={16} />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </SettingsCard>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </SettingsCard>
+                    </div>
                 </div>
             )}
 

@@ -13,6 +13,10 @@ const DeleteDocumentModal = ({ doc, onClose, onDeleted }) => {
             const res = await fetch(`http://localhost:3000/api/documents/${doc.doc_id}`, {
                 method: "DELETE",
                 credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
             });
             if (!res.ok) {
                 const t = await res.text().catch(() => "");

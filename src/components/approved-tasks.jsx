@@ -147,343 +147,193 @@ const ApprovedTasks = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-6">
-            <div className="max-w-7xl mx-auto space-y-8">
-                {/* Header Section */}
-                <div className="flex items-center justify-between">
-                    {/* Back Button */}
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-0 md:p-0 flex flex-row">
+            {/* Sidebar: Stats & Filters */}
+            <aside className="hidden lg:flex flex-col w-96 min-w-80 max-w-xs h-screen sticky top-0 left-0 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-xl p-8 space-y-8 z-10">
+                {/* Stats */}
+                <div className="rounded-2xl bg-gradient-to-br from-blue-100 to-green-100 dark:from-gray-800 dark:to-gray-700 p-6 shadow">
+                    <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Overview</h2>
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">Total</span>
+                            <span className="font-bold text-2xl text-green-600 dark:text-green-400">{approvedTasks.length}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">On Time</span>
+                            <span className="font-bold text-2xl text-blue-600 dark:text-blue-400">{filteredTasks.filter(task => task.doc_due_date >= task.doc_date_submitted).length}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">Late</span>
+                            <span className="font-bold text-2xl text-red-600 dark:text-red-400">{filteredTasks.filter(task => task.doc_due_date < task.doc_date_submitted).length}</span>
+                        </div>
+                    </div>
+                </div>
+                {/* Filters */}
+                <div className="rounded-2xl bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 p-6 shadow">
+                    <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Filters</h2>
+                    <div className="space-y-4">
+                        {/* Search */}
+                        <input
+                            type="text"
+                            placeholder="Search tasks..."
+                            value={filters.search}
+                            onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                            className="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        />
+                        {/* Date Range */}
+                        <select
+                            value={filters.dateRange}
+                            onChange={(e) => setFilters({ ...filters, dateRange: e.target.value })}
+                            className="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        >
+                            <option value="all">All Time</option>
+                            <option value="week">Last Week</option>
+                            <option value="month">Last Month</option>
+                            <option value="quarter">Last Quarter</option>
+                        </select>
+                        {/* Assignee */}
+                        <select
+                            value={filters.assignee}
+                            onChange={(e) => setFilters({ ...filters, assignee: e.target.value })}
+                            className="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        >
+                            <option value="all">All Assignees</option>
+                            {users.map((user) => (
+                                <option key={user.user_id} value={user.user_id}>
+                                    {getUserFullName(user.user_id)}
+                                </option>
+                            ))}
+                        </select>
+                        {/* Status */}
+                        <select
+                            value={filters.submissionStatus}
+                            onChange={(e) => setFilters({ ...filters, submissionStatus: e.target.value })}
+                            className="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        >
+                            <option value="all">All Status</option>
+                            <option value="on-time">On Time</option>
+                            <option value="late">Late</option>
+                        </select>
+                        <button
+                            onClick={resetFilters}
+                            className="w-full mt-2 py-2 bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:from-blue-100 hover:to-blue-200 dark:hover:from-blue-900 dark:hover:to-blue-800 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-all duration-200 shadow-md"
+                        >
+                            Reset All
+                        </button>
+                    </div>
+                </div>
+            </aside>
+            {/* Main Content: Task Cards */}
+            <main className="flex-1 min-h-screen p-4 md:p-8 overflow-x-auto">
+                <div className="flex items-center justify-between mb-6">
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Approved Tasks</h1>
                     <button
                         onClick={() => window.history.back()}
-                        className="group flex items-center justify-center w-14 h-14 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-2xl hover:border-blue-400 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:bg-gray-700 dark:hover:border-blue-400 transition-all duration-300 shadow-lg hover:shadow-xl"
+                        className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow hover:bg-blue-50 dark:hover:bg-gray-600 transition"
                     >
-                        <svg className="w-6 h-6 text-gray-600 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                         </svg>
+                        Back
                     </button>
-
-                    {/* Title Section */}
-                    <div className="text-center flex-1 mx-8">
-                        <div className="inline-flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg shadow-lg">
-                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-                                Approved Tasks
-                            </h1>
-                        </div>
-                        <p className="text-gray-600 dark:text-gray-400 text-lg font-medium">Track and manage completed tasks</p>
-                    </div>
-
-                    {/* Empty space for balance */}
-                    <div className="w-14"></div>
                 </div>
-
-                {/* Error State */}
                 {error && (
-                    <div className="p-4 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border border-red-200 dark:border-red-800 rounded-2xl shadow-lg">
-                        <div className="flex items-center space-x-3">
-                            <div className="p-2 bg-red-100 dark:bg-red-900 rounded-full">
-                                <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                            <p className="text-red-700 dark:text-red-400 font-medium">{error}</p>
-                        </div>
+                    <div className="p-4 mb-4 bg-red-100 dark:bg-red-900 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400">
+                        {error}
                     </div>
                 )}
-
-                {/* Stats and Filters Container */}
-                <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-                    {/* Stats Cards */}
-                    <div className="xl:col-span-1 space-y-6">
-                        {/* Main Stats Card */}
-                        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
-                            <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-6 text-white">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-green-100 text-sm font-medium">Approved Tasks</p>
-                                        <p className="text-3xl font-bold">{filteredTasks.length}</p>
-                                        <p className="text-green-100 text-xs mt-1">of {approvedTasks.length} total</p>
-                                    </div>
-                                    <div className="p-3 bg-white/20 rounded-xl">
-                                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                    </div>
-                                </div>
-                            </div>
+                {filteredTasks.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20">
+                        <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded-full flex items-center justify-center mb-6 shadow-lg">
+                            <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
                         </div>
-
-                        {/* Additional Stats Cards */}
-                        <div className="grid grid-cols-1 gap-4">
-                            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg border border-gray-100 dark:border-gray-700">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-gray-600 dark:text-gray-400 text-sm">On Time</p>
-                                        <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                                            {filteredTasks.filter(task => task.doc_due_date >= task.doc_date_submitted).length}
-                                        </p>
-                                    </div>
-                                    <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                                        <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg border border-gray-100 dark:border-gray-700">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-gray-600 dark:text-gray-400 text-sm">Late</p>
-                                        <p className="text-xl font-bold text-red-600 dark:text-red-400">
-                                            {filteredTasks.filter(task => task.doc_due_date < task.doc_date_submitted).length}
-                                        </p>
-                                    </div>
-                                    <div className="p-2 bg-red-100 dark:bg-red-900 rounded-lg">
-                                        <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                        </svg>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                            {approvedTasks.length === 0 ? 'No Approved Tasks' : 'No Tasks Found'}
+                        </h3>
+                        <p className="text-gray-500 dark:text-gray-400 mb-4 text-base max-w-md text-center">
+                            {approvedTasks.length === 0
+                                ? 'There are no approved tasks to display at the moment.'
+                                : 'No tasks match your current filters. Try adjusting your search criteria.'}
+                        </p>
+                        {approvedTasks.length > 0 && filteredTasks.length === 0 && (
+                            <button
+                                onClick={resetFilters}
+                                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                Clear All Filters
+                            </button>
+                        )}
                     </div>
-
-                    {/* Filters Section */}
-                    <div className="xl:col-span-3">
-                        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-8">
-                            <div className="flex items-center justify-between mb-6">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg shadow-lg">
-                                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
-                                        </svg>
-                                    </div>
-                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">Filters</h3>
-                                </div>
-                                <button
-                                    onClick={resetFilters}
-                                    className="px-4 py-2 bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:from-blue-100 hover:to-blue-200 dark:hover:from-blue-900 dark:hover:to-blue-800 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-all duration-200 shadow-md hover:shadow-lg"
-                                >
-                                    Reset All
-                                </button>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-                                {/* Search Filter */}
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Search</label>
-                                    <div className="relative">
-                                        <input
-                                            type="text"
-                                            placeholder="Search tasks..."
-                                            value={filters.search}
-                                            onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                                            className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-8">
+                        {filteredTasks.map((task) => (
+                            <div key={task.doc_id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 flex flex-col gap-4 hover:shadow-2xl transition">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-blue-200 dark:border-blue-700">
+                                        <img
+                                            src={getUserProfilePicture(task.doc_tasked_to)}
+                                            alt={getUserFullName(task.doc_tasked_to)}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => { e.target.src = defaultAvatar; }}
                                         />
-                                        <div className="absolute left-3 top-3.5 p-1 bg-gray-100 dark:bg-gray-600 rounded-lg">
-                                            <svg className="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                            </svg>
-                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="text-sm text-gray-500 dark:text-gray-400">Assigned to</div>
+                                        <div className="font-semibold text-gray-900 dark:text-white">{getUserFullName(task.doc_tasked_to)}</div>
                                     </div>
                                 </div>
-
-                                {/* Date Range Filter */}
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Date Range</label>
-                                    <select
-                                        value={filters.dateRange}
-                                        onChange={(e) => setFilters({ ...filters, dateRange: e.target.value })}
-                                        className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
-                                    >
-                                        <option value="all">All Time</option>
-                                        <option value="week">Last Week</option>
-                                        <option value="month">Last Month</option>
-                                        <option value="quarter">Last Quarter</option>
-                                    </select>
+                                <div>
+                                    <h2 className="text-lg font-bold text-blue-700 dark:text-blue-300 truncate" title={task.doc_name}>{task.doc_name}</h2>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <span className="text-xs text-gray-400">Task ID:</span>
+                                        <span className="text-xs font-bold text-blue-800 dark:text-blue-300">#{task.doc_id}</span>
+                                    </div>
                                 </div>
-
-                                {/* Assignee Filter */}
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Assignee</label>
-                                    <select
-                                        value={filters.assignee}
-                                        onChange={(e) => setFilters({ ...filters, assignee: e.target.value })}
-                                        className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
-                                    >
-                                        <option value="all">All Assignees</option>
-                                        {users.map((user) => (
-                                            <option key={user.user_id} value={user.user_id}>
-                                                {getUserFullName(user.user_id)}
-                                            </option>
-                                        ))}
-                                    </select>
+                                <div className="flex items-center gap-3 mt-2">
+                                    <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-purple-200 dark:border-purple-700">
+                                        <img
+                                            src={getUserProfilePicture(task.doc_tasked_by)}
+                                            alt={`Atty. ${getUserFullName(task.doc_tasked_by)}`}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => { e.target.src = defaultAvatar; }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400">Assigned by</div>
+                                        <div className="text-sm font-semibold text-gray-900 dark:text-white">Atty. {getUserFullName(task.doc_tasked_by)}</div>
+                                    </div>
                                 </div>
-
-                                {/* Submission Status Filter */}
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Status</label>
-                                    <select
-                                        value={filters.submissionStatus}
-                                        onChange={(e) => setFilters({ ...filters, submissionStatus: e.target.value })}
-                                        className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all duration-200 shadow-sm hover:shadow-md"
-                                    >
-                                        <option value="all">All Status</option>
-                                        <option value="on-time">On Time</option>
-                                        <option value="late">Late</option>
-                                    </select>
+                                <div className="flex flex-wrap gap-4 mt-4">
+                                    <div className="flex flex-col">
+                                        <span className="text-xs text-gray-400">Due</span>
+                                        <span className="text-sm font-medium text-gray-900 dark:text-white">{new Date(task.doc_due_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-xs text-gray-400">Submitted</span>
+                                        <span className="text-sm font-medium text-gray-900 dark:text-white">{new Date(task.doc_date_submitted).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-xs text-gray-400">Status</span>
+                                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${task.doc_due_date < task.doc_date_submitted ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'} shadow`}>
+                                            {task.doc_due_date < task.doc_date_submitted ? (
+                                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                                            ) : (
+                                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                                            )}
+                                            {task.doc_due_date < task.doc_date_submitted ? 'Late' : 'On Time'}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        ))}
                     </div>
-                </div>
-
-                {/* Tasks Table */}
-                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
-                    {filteredTasks.length === 0 ? (
-                        <div className="text-center py-20">
-                            <div className="mx-auto w-32 h-32 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded-full flex items-center justify-center mb-6 shadow-lg">
-                                {approvedTasks.length === 0 ? (
-                                    <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                ) : (
-                                    <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                    </svg>
-                                )}
-                            </div>
-                            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-                                {approvedTasks.length === 0 ? 'No Approved Tasks' : 'No Tasks Found'}
-                            </h3>
-                            <p className="text-gray-500 dark:text-gray-400 mb-6 text-lg max-w-md mx-auto">
-                                {approvedTasks.length === 0
-                                    ? 'There are no approved tasks to display at the moment.'
-                                    : 'No tasks match your current filters. Try adjusting your search criteria.'
-                                }
-                            </p>
-                            {approvedTasks.length > 0 && filteredTasks.length === 0 && (
-                                <button
-                                    onClick={resetFilters}
-                                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
-                                >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                    </svg>
-                                    Clear All Filters
-                                </button>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full">
-                                <thead>
-                                    <tr className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 border-b border-gray-200 dark:border-gray-700">
-                                        <th className="px-8 py-5 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Task ID</th>
-                                        <th className="px-8 py-5 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Document Name</th>
-                                        <th className="px-8 py-5 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Tasked To</th>
-                                        <th className="px-8 py-5 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Tasked By</th>
-                                        <th className="px-8 py-5 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Due Date</th>
-                                        <th className="px-8 py-5 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Date Submitted</th>
-                                        <th className="px-8 py-5 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
-                                    {filteredTasks.map((task, index) => (
-                                        <tr
-                                            key={task.doc_id}
-                                            className={`hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-gray-700 dark:hover:to-gray-600 transition-all duration-200 ${index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-gray-800/50'
-                                                }`}
-                                        >
-                                            <td className="px-8 py-6 whitespace-nowrap">
-                                                <div className="inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 rounded-full">
-                                                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                                    <span className="text-sm font-bold text-blue-800 dark:text-blue-300">#{task.doc_id}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                <div className="text-sm font-semibold text-gray-900 dark:text-white max-w-xs truncate" title={task.doc_name}>
-                                                    {task.doc_name}
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-6 whitespace-nowrap">
-                                                <div className="flex items-center gap-3">
-                                                    <img
-                                                        src={getUserProfilePicture(task.doc_tasked_to)}
-                                                        alt={getUserFullName(task.doc_tasked_to)}
-                                                        className="w-10 h-10 rounded-full object-cover shadow-lg ring-2 ring-blue-200 dark:ring-blue-700"
-                                                        onError={(e) => {
-                                                            e.target.src = defaultAvatar;
-                                                        }}
-                                                    />
-                                                    <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                                                        {getUserFullName(task.doc_tasked_to)}
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-6 whitespace-nowrap">
-                                                <div className="flex items-center gap-3">
-                                                    <img
-                                                        src={getUserProfilePicture(task.doc_tasked_by)}
-                                                        alt={`Atty. ${getUserFullName(task.doc_tasked_by)}`}
-                                                        className="w-10 h-10 rounded-full object-cover shadow-lg ring-2 ring-purple-200 dark:ring-purple-700"
-                                                        onError={(e) => {
-                                                            e.target.src = defaultAvatar;
-                                                        }}
-                                                    />
-                                                    <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                                                        Atty. {getUserFullName(task.doc_tasked_by)}
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-6 whitespace-nowrap">
-                                                <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                                    {new Date(task.doc_due_date).toLocaleDateString('en-US', {
-                                                        year: 'numeric',
-                                                        month: 'short',
-                                                        day: 'numeric'
-                                                    })}
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-6 whitespace-nowrap">
-                                                <div className="flex flex-col gap-2">
-                                                    <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                                        {new Date(task.doc_date_submitted).toLocaleDateString('en-US', {
-                                                            year: 'numeric',
-                                                            month: 'short',
-                                                            day: 'numeric'
-                                                        })}
-                                                    </div>
-                                                    {task.doc_due_date < task.doc_date_submitted && (
-                                                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-red-100 to-red-200 text-red-800 dark:from-red-900 dark:to-red-800 dark:text-red-300 shadow-md">
-                                                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                                            </svg>
-                                                            Late
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-6 whitespace-nowrap">
-                                                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-gradient-to-r from-green-100 to-green-200 text-green-800 dark:from-green-900 dark:to-green-800 dark:text-green-300 shadow-md">
-                                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                                    </svg>
-                                                    {task.doc_status.charAt(0).toUpperCase() + task.doc_status.slice(1)}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </div>
-            </div>
+                )}
+            </main>
         </div>
     );
 };

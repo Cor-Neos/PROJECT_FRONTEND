@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Pencil, Eye, Search } from "lucide-react";
+import { Pencil, Eye, Search, Folder } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useClickOutside } from "@/hooks/use-click-outside";
 import ViewModal from "../../components/view-case";
@@ -7,6 +7,7 @@ import { useAuth } from "@/context/auth-context";
 import AddNewCase from "../../components/add-case";
 import toast from "react-hot-toast";
 import EditCaseModal from "../../components/edit-case";
+import CaseFolder from "../../components/case-folder";
 
 const Cases = () => {
     const { user } = useAuth();
@@ -49,8 +50,8 @@ const Cases = () => {
         const lawyer = tableData.find((u) => u.user_id === lawyerId);
         return lawyer
             ? `${lawyer.user_fname || ""} ${lawyer.user_mname ? lawyer.user_mname[0] + "." : ""} ${lawyer.user_lname || ""}`
-                .replace(/\s+/g, " ")
-                .trim()
+                  .replace(/\s+/g, " ")
+                  .trim()
             : "Unassigned";
     };
 
@@ -134,7 +135,9 @@ const Cases = () => {
                 assigned_by: newCase.assigned_by ? parseInt(newCase.assigned_by, 10) : null,
                 user_id: newCase.user_id ? parseInt(newCase.user_id, 10) : null,
                 case_fee: newCase.case_fee ? parseFloat(newCase.case_fee) : null,
-                case_tag: JSON.stringify(selectedTags), // send as JSON string
+                case_tag_list: JSON.stringify(selectedTags), // send as JSON string
+                case_tag: JSON.stringify(selectedTags[0]), // initial tag for every new case
+
             };
 
             const res = await fetch("http://localhost:3000/api/cases", {
@@ -213,28 +216,46 @@ const Cases = () => {
             </div>
 
             {/* Tabs */}
-            <div className="mb-4 flex gap-2">
-                {["All", "Pending", "Processing", "Completed", "Dismissed"].map((tab) => {
-                    const baseColors = {
-                        All: "bg-blue-500 text-white font-semibold",
-                        Pending: "bg-yellow-500 text-white font-semibold",
-                        Processing: "bg-blue-500 text-white font-semibold",
-                        Completed: "bg-green-500 text-white font-semibold",
-                        Dismissed: "bg-red-500 text-white font-semibold",
-                    };
+            <div className="mb-4 flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                    {/* Status Buttons */}
+                    <div className="flex gap-2">
+                        {["All", "Pending", "Processing", "Completed", "Dismissed"].map((tab) => {
+                            const baseColors = {
+                                All: "bg-blue-500 text-white font-semibold",
+                                Pending: "bg-yellow-500 text-white font-semibold",
+                                Processing: "bg-blue-500 text-white font-semibold",
+                                Completed: "bg-green-500 text-white font-semibold",
+                                Dismissed: "bg-red-500 text-white font-semibold",
+                            };
 
-                    const active = statusFilter === tab || (tab === "All" && statusFilter === "");
-                    return (
-                        <button
-                            key={tab}
-                            onClick={() => setStatusFilter(tab === "All" ? "" : tab)}
-                            className={`rounded-full px-4 py-2 text-sm font-medium transition ${active ? baseColors[tab] : "bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-slate-200"
-                                }`}
-                        >
-                            {tab}
-                        </button>
-                    );
-                })}
+                            const active = statusFilter === tab || (tab === "All" && statusFilter === "");
+
+                            return (
+                                <button
+                                    key={tab}
+                                    onClick={() => setStatusFilter(tab === "All" ? "" : tab)}
+                                    className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                                        active ? baseColors[tab] : "bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-slate-200"
+                                    }`}
+                                >
+                                    {tab}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Case Folder Button */}
+                    <button
+                        className="flex items-center gap-2 rounded-md bg-yellow-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:scale-105 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 group"
+                        onClick={() => navigate("/cases/case-folder")}
+                    >
+                        <span className="transition-transform duration-200 group-hover:rotate-12 group-hover:scale-110">
+                            <Folder size={18} />
+                        </span>
+                        <span className="tracking-wide">Case Folder</span>
+                    </button>
+                </div>
             </div>
 
             {/* Search and Buttons */}
@@ -299,14 +320,15 @@ const Cases = () => {
                                         <td className="px-4 py-3">{formatDateTime(cases.case_date_created)}</td>
                                         <td className="px-4 py-3">
                                             <span
-                                                className={`inline-block rounded-full px-3 py-1 text-xs font-medium capitalize ${cases.case_status === "Pending"
-                                                    ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-700/20 dark:text-yellow-300"
-                                                    : cases.case_status === "Processing"
-                                                        ? "bg-blue-100 text-blue-700 dark:bg-blue-700/20 dark:text-blue-300"
-                                                        : cases.case_status === "Completed"
+                                                className={`inline-block rounded-full px-3 py-1 text-xs font-medium capitalize ${
+                                                    cases.case_status === "Pending"
+                                                        ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-700/20 dark:text-yellow-300"
+                                                        : cases.case_status === "Processing"
+                                                          ? "bg-blue-100 text-blue-700 dark:bg-blue-700/20 dark:text-blue-300"
+                                                          : cases.case_status === "Completed"
                                                             ? "bg-green-100 text-green-700 dark:bg-green-700/20 dark:text-green-300"
                                                             : "bg-gray-100 text-gray-700 dark:bg-gray-700/50 dark:text-gray-300"
-                                                    }`}
+                                                }`}
                                             >
                                                 {cases.case_status}
                                             </span>
@@ -319,9 +341,9 @@ const Cases = () => {
                                         <td className="px-4 py-3">
                                             {cases?.case_balance !== null && cases?.case_balance !== undefined
                                                 ? new Intl.NumberFormat("en-PH", {
-                                                    style: "currency",
-                                                    currency: "PHP",
-                                                }).format(Number(cases.case_balance))
+                                                      style: "currency",
+                                                      currency: "PHP",
+                                                  }).format(Number(cases.case_balance))
                                                 : "₱0.00"}
                                         </td>
                                         <td className="px-4 py-3">
@@ -373,10 +395,11 @@ const Cases = () => {
                     <button
                         onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                         disabled={currentPage === 1}
-                        className={`rounded border px-3 py-1 ${currentPage === 1
-                            ? "cursor-not-allowed bg-gray-200 text-gray-400"
-                            : "bg-white hover:bg-gray-100 dark:bg-slate-800 dark:hover:bg-slate-700"
-                            }`}
+                        className={`rounded border px-3 py-1 ${
+                            currentPage === 1
+                                ? "cursor-not-allowed bg-gray-200 text-gray-400"
+                                : "bg-white hover:bg-gray-100 dark:bg-slate-800 dark:hover:bg-slate-700"
+                        }`}
                     >
                         &lt;
                     </button>
@@ -388,10 +411,11 @@ const Cases = () => {
                     <button
                         onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                         disabled={currentPage === totalPages}
-                        className={`rounded border px-3 py-1 ${currentPage === totalPages
-                            ? "cursor-not-allowed bg-gray-200 text-gray-400"
-                            : "bg-white hover:bg-gray-100 dark:bg-slate-800 dark:hover:bg-slate-700"
-                            }`}
+                        className={`rounded border px-3 py-1 ${
+                            currentPage === totalPages
+                                ? "cursor-not-allowed bg-gray-200 text-gray-400"
+                                : "bg-white hover:bg-gray-100 dark:bg-slate-800 dark:hover:bg-slate-700"
+                        }`}
                     >
                         &gt;
                     </button>

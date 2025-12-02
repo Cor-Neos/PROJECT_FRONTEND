@@ -395,11 +395,10 @@ export const Reports = () => {
                             <button
                                 key={btn.value}
                                 onClick={() => setChartType(btn.value)}
-                                className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
-                                    chartType === btn.value
-                                        ? "bg-blue-600 text-white"
-                                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-                                }`}
+                                className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${chartType === btn.value
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                                    }`}
                             >
                                 {btn.label}
                             </button>
@@ -477,10 +476,10 @@ export const Reports = () => {
                                         <td className="p-2 text-slate-700 dark:text-slate-300">
                                             {log.user_log_time
                                                 ? new Date(log.user_log_time).toLocaleString("en-US", {
-                                                      year: "numeric",
-                                                      month: "long",
-                                                      day: "numeric",
-                                                  })
+                                                    year: "numeric",
+                                                    month: "long",
+                                                    day: "numeric",
+                                                })
                                                 : ""}
                                         </td>
                                     </tr>
