@@ -18,7 +18,9 @@ const CaseFolder = () => {
 
     const fetchCases = async () => {
         try {
-            const res = await fetch("http://localhost:3000/api/cases", {
+            const cases_endpoint = user?.user_role === "Admin" ? "/cases" : `/cases/user/${user?.user_id}`;
+
+            const res = await fetch(`http://localhost:3000/api${cases_endpoint}`, {
                 method: "GET",
                 credentials: "include",
             });
