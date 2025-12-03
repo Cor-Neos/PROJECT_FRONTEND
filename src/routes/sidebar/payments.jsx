@@ -93,7 +93,7 @@ export const Payments = () => {
     const [addPayment, setAddPayment] = useState(null);
     const [chequeDetails, setChequeDetails] = useState({
         cheque_name: "",
-        cheque_number: ""
+        cheque_number: "",
     });
     const [selectedCheque, setSelectedCheque] = useState(null);
     const [selectedCash, setSelectedCash] = useState(null);
@@ -152,7 +152,7 @@ export const Payments = () => {
         try {
             const paymentData = {
                 ...addPayment,
-                payment_amount: amt.toFixed(2)
+                payment_amount: amt.toFixed(2),
             };
 
             // Add cheque details if payment type is Cheque
@@ -299,10 +299,11 @@ export const Payments = () => {
                                         className="border-t border-gray-200 transition hover:bg-blue-50 dark:border-gray-700 dark:hover:bg-slate-800"
                                     >
                                         <td className="px-4 py-3">{p.payment_id}</td>
-                                        <td className="px-4 py-3">
-                                            {p.client_fullname}
-                                        </td>
-                                        <td className="max-w-xs truncate px-4 py-3 text-center font-medium" title={p.case_id}>
+                                        <td className="px-4 py-3">{p.client_fullname}</td>
+                                        <td
+                                            className="max-w-xs truncate px-4 py-3 text-center font-medium"
+                                            title={p.case_id}
+                                        >
                                             {p.case_id}
                                         </td>
                                         <td className="px-4 py-3 font-bold text-green-600 dark:text-green-400">{formatCurrency(p.payment_amount)}</td>
@@ -310,7 +311,7 @@ export const Payments = () => {
                                         <td className="px-4 py-3">
                                             {p.payment_type === "Cheque" ? (
                                                 <span
-                                                    className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800 cursor-pointer hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800"
+                                                    className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800"
                                                     onClick={() => setSelectedCheque(p)}
                                                     title="Click to view cheque details"
                                                 >
@@ -318,7 +319,7 @@ export const Payments = () => {
                                                 </span>
                                             ) : (
                                                 <span
-                                                    className="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800 cursor-pointer hover:bg-green-200 dark:bg-green-900 dark:text-green-200 dark:hover:bg-green-800"
+                                                    className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800 hover:bg-green-200 dark:bg-green-900 dark:text-green-200 dark:hover:bg-green-800"
                                                     onClick={() => setSelectedCash(p)}
                                                     title="Click to view cash payment details"
                                                 >
@@ -527,7 +528,11 @@ export const Payments = () => {
                                         <input
                                             type="text"
                                             value={chequeDetails.cheque_number}
-                                            onChange={(e) => setChequeDetails({ ...chequeDetails, cheque_number: e.target.value })}
+                                            onChange={(e) => {
+                                                // Allow only numbers and limit to 10 digits
+                                                const value = e.target.value.replace(/[^0-9]/g, "").slice(0, 10);
+                                                setChequeDetails({ ...chequeDetails, cheque_number: value });
+                                            }}
                                             className="w-full rounded-md border px-3 py-2 dark:bg-slate-700 dark:text-slate-50"
                                             placeholder="Enter cheque number"
                                         />
@@ -591,7 +596,9 @@ export const Payments = () => {
                             {/* Amount */}
                             <div className="rounded-lg bg-green-50 p-4 text-center dark:bg-green-900/20">
                                 <p className="text-sm font-medium text-green-700 dark:text-green-300">AMOUNT</p>
-                                <p className="text-3xl font-bold text-green-800 dark:text-green-200">{formatCurrency(selectedCheque.payment_amount)}</p>
+                                <p className="text-3xl font-bold text-green-800 dark:text-green-200">
+                                    {formatCurrency(selectedCheque.payment_amount)}
+                                </p>
                             </div>
 
                             {/* Account Details */}
@@ -613,7 +620,9 @@ export const Payments = () => {
                             {/* Footer */}
                             <div className="border-t pt-4 text-center text-sm text-gray-600 dark:text-gray-400">
                                 <p>Date: {formatDateTime(selectedCheque.payment_date)}</p>
-                                <p>Processed by: {selectedCheque.user_fname} {selectedCheque.user_mname} {selectedCheque.user_lname}</p>
+                                <p>
+                                    Processed by: {selectedCheque.user_fname} {selectedCheque.user_mname} {selectedCheque.user_lname}
+                                </p>
                             </div>
                         </div>
 
@@ -674,7 +683,9 @@ export const Payments = () => {
                             {/* Footer */}
                             <div className="border-t pt-4 text-center text-sm text-gray-600 dark:text-gray-400">
                                 <p>Date: {formatDateTime(selectedCash.payment_date)}</p>
-                                <p>Processed by: {selectedCash.user_fname} {selectedCash.user_mname} {selectedCash.user_lname}</p>
+                                <p>
+                                    Processed by: {selectedCash.user_fname} {selectedCash.user_mname} {selectedCash.user_lname}
+                                </p>
                             </div>
                         </div>
 

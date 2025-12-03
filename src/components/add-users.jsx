@@ -224,7 +224,14 @@ const AddUser = ({ onClose }) => {
                             <input
                                 type="text"
                                 value={user_phonenum}
-                                onChange={(e) => setPhone(e.target.value)}
+                                onChange={(e) => {
+                                    // Remove any non-digit characters
+                                    const onlyNumbers = e.target.value.replace(/\D/g, "");
+                                    // Limit to 11 digits
+                                    if (onlyNumbers.length <= 11) {
+                                        setPhone(onlyNumbers);
+                                    }
+                                }}
                                 placeholder="Phone Number"
                                 className="w-full rounded-md border border-gray-300 px-4 py-2 pl-10 text-black focus:outline-none focus:ring-1 focus:ring-blue-400 dark:bg-transparent dark:text-white"
                             />

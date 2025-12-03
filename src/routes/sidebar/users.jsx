@@ -17,7 +17,7 @@ const Users = () => {
     const [users, setUsers] = useState([]);
     const [search, setSearch] = useState("");
     const [selectedRole, setSelectedRole] = useState("All");
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false); // Add New User modal
     const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false);
     const [userToSuspend, setUserToSuspend] = useState(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -527,7 +527,14 @@ const Users = () => {
                                 <input
                                     type="text"
                                     value={userToEdit.user_phonenum || ""}
-                                    onChange={(e) => setUserToEdit((prev) => ({ ...prev, user_phonenum: e.target.value }))}
+                                    onChange={(e) => {
+                                        // Remove non-digit characters
+                                        const onlyNumbers = e.target.value.replace(/\D/g, "");
+                                        // Limit to 11 digits
+                                        if (onlyNumbers.length <= 11) {
+                                            setUserToEdit((prev) => ({ ...prev, user_phonenum: onlyNumbers }));
+                                        }
+                                    }}
                                     className="mt-1 w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-gray-900 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
                                 />
                             </div>

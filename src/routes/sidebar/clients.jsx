@@ -547,7 +547,14 @@ const Client = () => {
                                 <input
                                     type="text"
                                     value={editClient.client_phonenum}
-                                    onChange={(e) => setEditClient({ ...editClient, client_phonenum: e.target.value })}
+                                    onChange={(e) => {
+                                        // Remove non-digit characters
+                                        const onlyNumbers = e.target.value.replace(/\D/g, "");
+                                        // Limit to 11 digits
+                                        if (onlyNumbers.length <= 11) {
+                                            setEditClient({ ...editClient, client_phonenum: onlyNumbers });
+                                        }
+                                    }}
                                     className="w-full rounded-md border px-3 py-2 text-slate-900 dark:bg-slate-700 dark:text-slate-50"
                                 />
                             </div>

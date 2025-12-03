@@ -153,7 +153,10 @@ const AddClient = ({ AddClients, setAddClients, onClientAdded }) => {
                     onClick={() => setAddClients(null)}
                     className="absolute right-4 top-4 text-gray-500 hover:text-gray-800 dark:hover:text-white"
                 >
-                    <X className="btn-ghost" size={40}/>
+                    <X
+                        className="btn-ghost"
+                        size={40}
+                    />
                 </button>
 
                 <h2 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">Add New Client</h2>
@@ -249,12 +252,17 @@ const AddClient = ({ AddClients, setAddClients, onClientAdded }) => {
                                 type="tel"
                                 placeholder="Phone Number *"
                                 value={clientData.client_phonenum}
-                                onChange={(e) =>
-                                    setClientData({
-                                        ...clientData,
-                                        client_phonenum: e.target.value,
-                                    })
-                                }
+                                onChange={(e) => {
+                                    // Remove any non-digit characters
+                                    const onlyNumbers = e.target.value.replace(/\D/g, "");
+                                    // Limit to 11 digits
+                                    if (onlyNumbers.length <= 11) {
+                                        setClientData({
+                                            ...clientData,
+                                            client_phonenum: onlyNumbers,
+                                        });
+                                    }
+                                }}
                                 className="rounded-lg border px-3 py-2 dark:border-gray-600 dark:bg-slate-700 dark:text-white"
                             />
                         </div>
@@ -318,7 +326,14 @@ const AddClient = ({ AddClients, setAddClients, onClientAdded }) => {
                                     type="tel"
                                     placeholder="Phone"
                                     value={contact.contact_phone}
-                                    onChange={(e) => setContact({ ...contact, contact_phone: e.target.value })}
+                                    onChange={(e) => {
+                                        // Remove non-digit characters
+                                        const onlyNumbers = e.target.value.replace(/\D/g, "");
+                                        // Limit to 11 digits
+                                        if (onlyNumbers.length <= 11) {
+                                            setContact({ ...contact, contact_phone: onlyNumbers });
+                                        }
+                                    }}
                                     className="rounded-lg border px-3 py-2 dark:border-gray-600 dark:bg-slate-700 dark:text-white"
                                 />
                             </div>

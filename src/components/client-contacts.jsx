@@ -375,7 +375,17 @@ const EditContactModal = ({ contact, onClose, onSave, clients = [] }) => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+
+        if (name === "contact_phone") {
+            // Allow only digits
+            const onlyNumbers = value.replace(/\D/g, "");
+            // Limit to 11 digits
+            if (onlyNumbers.length <= 11) {
+                setFormData((prev) => ({ ...prev, [name]: onlyNumbers }));
+            }
+        } else {
+            setFormData((prev) => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleSave = async () => {

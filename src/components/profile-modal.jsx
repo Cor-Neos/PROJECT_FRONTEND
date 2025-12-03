@@ -70,7 +70,17 @@ export const ProfileModal = ({ onClose }) => {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+
+        if (name === "user_phonenum") {
+            // Remove non-digit characters
+            const onlyNumbers = value.replace(/\D/g, "");
+            // Limit to 11 digits
+            if (onlyNumbers.length <= 11) {
+                setFormData((prev) => ({ ...prev, [name]: onlyNumbers }));
+            }
+        } else {
+            setFormData((prev) => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleSave = async () => {
