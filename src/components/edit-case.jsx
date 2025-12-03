@@ -16,36 +16,41 @@ const EditCaseModal = ({ isOpen, onClose, caseData, onUpdate, user }) => {
         case_remarks: "",
         case_cabinet: "",
         case_drawer: "",
+        ctag_id: "",
     });
 
     const [clients, setClients] = useState([]);
     const [caseCategories, setCaseCategories] = useState([]);
     const [caseCategoryTypes, setCaseCategoryTypes] = useState([]);
     const [lawyers, setLawyers] = useState([]);
+    const [caseTags, setCaseTags] = useState([]);
     const [errors, setErrors] = useState({});
 
     // Fetch dropdown data
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [clientsRes, categoriesRes, typesRes, lawyersRes] = await Promise.all([
+                const [clientsRes, categoriesRes, typesRes, lawyersRes, tagsRes] = await Promise.all([
                     fetch("http://localhost:3000/api/clients", { credentials: "include" }),
                     fetch("http://localhost:3000/api/case-categories", { credentials: "include" }),
                     fetch("http://localhost:3000/api/case-category-types", { credentials: "include" }),
                     fetch("http://localhost:3000/api/lawyer-specializations", { credentials: "include" }),
+                    fetch("http://localhost:3000/api/case-tags", { credentials: "include" }),
                 ]);
 
-                const [clientsData, categoriesData, typesData, lawyersData] = await Promise.all([
+                const [clientsData, categoriesData, typesData, lawyersData, tagsData] = await Promise.all([
                     clientsRes.json(),
                     categoriesRes.json(),
                     typesRes.json(),
                     lawyersRes.json(),
+                    tagsRes.json(),
                 ]);
 
                 setClients(clientsData);
                 setCaseCategories(categoriesData);
                 setCaseCategoryTypes(typesData);
                 setLawyers(lawyersData);
+                setCaseTags(tagsData);
             } catch (err) {
                 console.error("Error fetching dropdown data:", err);
             }
@@ -67,11 +72,12 @@ const EditCaseModal = ({ isOpen, onClose, caseData, onUpdate, user }) => {
                     user.user_role === "Lawyer"
                         ? user.user_id // lawyer always auto-assigned
                         : caseData.case_status === "Processing"
-                          ? caseData.user_id || "" // if processing, keep assigned lawyer
-                          : "", // if not processing, allow unassigned
+                            ? caseData.user_id || "" // if processing, keep assigned lawyer
+                            : "", // if not processing, allow unassigned
                 case_remarks: caseData.case_remarks || "",
                 case_cabinet: caseData.case_cabinet || "",
                 case_drawer: caseData.case_drawer || "",
+                ctag_id: caseData.ctag_id || "",
             });
         }
     }, [caseData]);
@@ -236,8 +242,8 @@ const EditCaseModal = ({ isOpen, onClose, caseData, onUpdate, user }) => {
                                 {user.user_role !== "Admin"
                                     ? `${user.user_fname} ${user.user_mname} ${user.user_lname}`
                                     : !formData.cc_id
-                                      ? "Select Category first"
-                                      : "Select Lawyer"}
+                                        ? "Select Category first"
+                                        : "Select Lawyer"}
                             </option>
 
                             {user.user_role === "Admin" ? (
@@ -268,6 +274,27 @@ const EditCaseModal = ({ isOpen, onClose, caseData, onUpdate, user }) => {
                                 </option>
                             )}
                         </select>
+                    </div>
+
+                    {/* Case Tag Dropdown */}
+                    <div>
+                        <label className="text-sm font-medium text-gray-700 dark:text-white">Case Tag</label>
+                        <select
+                            name="case_tag_id"
+                            value={formData.ctag_id || ""}
+                            onChange={handleChange}
+                            className="mt-1 w-full rounded-lg border px-3 py-2 dark:bg-slate-700 dark:text-white"
+                            disabled={!!formData.ctag_id} // Disable if already set
+                        >
+                            {caseTags.map((tag) => (
+                                <option key={tag.ctag_id} value={tag.ctag_id}>
+                                    {tag.ctag_name}
+                                </option>
+                            ))}
+                        </select>
+                        {formData.ctag_id && (
+                            <p className="text-xs text-green-600 mt-1">Tag already added. Editing is disabled.</p>
+                        )}
                     </div>
                 </div>
 

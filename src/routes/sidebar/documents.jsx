@@ -22,6 +22,7 @@ const Documents = () => {
     const [selectedCaseId, setSelectedCaseId] = useState("");
     const [showAddPanel, setShowAddPanel] = useState(true);
     const [addDocCaseId, setAddDocCaseId] = useState(null);
+    const [statusFilter, setStatusFilter] = useState("All");
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -163,6 +164,10 @@ const Documents = () => {
     // Filtered list (by name, type, case id, submitted/tasked by)
     const filteredDocs = documents.filter((doc) => {
         if (doc.is_deleted) return false; // Hide deleted docs from main list
+        // Tab filtering by 
+        if (statusFilter === "All") return true;
+        if (statusFilter === "Task" && doc.doc_type !== "Task") return false;
+        if ((statusFilter === "Support" || statusFilter === "") && doc.doc_type !== "Support") return false;
         const term = search.toLowerCase();
         const fields = [
             doc.doc_name,
@@ -207,6 +212,35 @@ const Documents = () => {
                     >
                         <Filter size={16} /> Filters
                     </button>
+                </div>
+            </div>
+
+            {/* Tabs */}
+            <div className="mb-4 flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                    {/* Status Buttons */}
+                    <div className="flex gap-2">
+                        {["All", "Support", "Task"].map((tab) => {
+                            const baseColors = {
+                                All: "bg-blue-500 text-white font-semibold",
+                                Support: "bg-blue-500 text-white font-semibold",
+                                Task: "bg-yellow-500 text-white font-semibold",
+                            };
+
+                            const active = statusFilter === tab || (tab === "All" && statusFilter === "");
+
+                            return (
+                                <button
+                                    key={tab}
+                                    onClick={() => setStatusFilter(tab === "All" ? "" : tab)}
+                                    className={`rounded-full px-4 py-2 text-sm font-medium transition ${active ? baseColors[tab] : "bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-slate-200"
+                                        }`}
+                                >
+                                    {tab}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
 

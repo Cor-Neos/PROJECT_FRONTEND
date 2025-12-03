@@ -43,6 +43,7 @@ const Userlogs = () => {
         const action = log.user_log_action?.toLowerCase();
 
         if (type === "user log") return <User className="h-5 w-5" />;
+        if (type === "client log") return <User className="h-5 w-5" />;
         if (type === "document log") return <FileText className="h-5 w-5" />;
         if (type === "case log") return <Scale className="h-5 w-5" />;
         if (type === "archive log") return <Archive className="h-5 w-5" />;
@@ -77,7 +78,7 @@ const Userlogs = () => {
         if (/login/i.test(action)) return "Login";
         if (/logout/i.test(action)) return "Logout";
         if (/User account update/i.test(action)) return "User Update";
-        if (/Updated Profile Information/i.test(action)) return "User Update";
+        if (/update profile information/i.test(action)) return "User Profile Update";
         if (/new client/i.test(action)) return "New Client Added";
         if (/new contact/i.test(action)) return "New Client Contact Added";
         if (/updated client/i.test(action)) return "Client Update";

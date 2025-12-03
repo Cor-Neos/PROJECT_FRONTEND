@@ -35,7 +35,7 @@ const SettingsCard = ({ title, actions, children }) => (
 const API_BASE = "http://localhost:3000/api";
 
 const Settings = () => {
-    const { user } = useAuth?.() || { user: null };
+    const { user } = useAuth();
 
     // Set default tab based on user role
     const getDefaultTab = (userRole) => {
@@ -169,13 +169,13 @@ const Settings = () => {
         setBranchDrafts(list);
         try {
             localStorage.setItem("branch_drafts", JSON.stringify(list));
-        } catch {}
+        } catch { }
     };
     const loadBranchDrafts = () => {
         try {
             const raw = localStorage.getItem("branch_drafts");
             if (raw) setBranchDrafts(JSON.parse(raw));
-        } catch {}
+        } catch { }
     };
     // Replace local-only draft submit with server POST; keep drafts as optional fallback list
     const addBranchDraft = async (e) => {
@@ -295,14 +295,14 @@ const Settings = () => {
         setCaseTagDrafts(list);
         try {
             localStorage.setItem("case_tag_drafts", JSON.stringify(list));
-        } catch {}
+        } catch { }
     };
 
     const loadCaseTagDrafts = () => {
         try {
             const raw = localStorage.getItem("case_tag_drafts");
             if (raw) setCaseTagDrafts(JSON.parse(raw));
-        } catch {}
+        } catch { }
     };
 
     const addCaseTagDraft = async (e) => {
@@ -359,7 +359,7 @@ const Settings = () => {
             const payload = {
                 ctag_name: editingCaseTagName.trim(),
                 ctag_sequence_num: editingCaseTagSequence ? parseInt(editingCaseTagSequence) : null,
-                ctag_created_by: null, // set if needed
+                ctag_created_by: user.user_id,
             };
 
             console.log("Saving case tag with payload:", payload);
@@ -618,8 +618,8 @@ const Settings = () => {
         const lawyer = users.find((u) => u.user_id === lawyerId);
         return lawyer
             ? `${lawyer.user_fname || ""} ${lawyer.user_mname ? lawyer.user_mname[0] + "." : ""} ${lawyer.user_lname || ""}`
-                  .replace(/\s+/g, " ")
-                  .trim()
+                .replace(/\s+/g, " ")
+                .trim()
             : "Unassigned";
     };
 
@@ -656,7 +656,7 @@ const Settings = () => {
 
     const tabs = [
         { key: "branch", label: "Branch", icon: Building2 },
-        { key: "access", label: "Case Access", icon: Lock },
+        { key: "access", label: "User Role", icon: Lock },
         { key: "case-categories", label: "Case Categories & Types ", icon: List },
         { key: "tags", label: "Case Tag", icon: Tags },
         { key: "archive", label: "Archive", icon: Archive },
@@ -788,7 +788,7 @@ const Settings = () => {
         try {
             e.dataTransfer.setData("text/userId", String(id));
             e.dataTransfer.setData("text/fromCol", String(fromCol));
-        } catch {}
+        } catch { }
     };
 
     const onDragOverCol = (e) => {
@@ -840,11 +840,10 @@ const Settings = () => {
                         <button
                             key={tab.key}
                             onClick={() => setActiveTab(tab.key)}
-                            className={`group relative flex items-center gap-3 rounded-md border px-4 py-2 text-sm font-medium transition-colors ${
-                                activeTab === tab.key
-                                    ? "border-blue-500/60 bg-blue-600 text-white shadow-lg shadow-blue-500/20"
-                                    : "border-transparent text-gray-700 hover:bg-blue-50 hover:text-blue-700 dark:text-gray-300 dark:hover:bg-gray-800/80"
-                            } `}
+                            className={`group relative flex items-center gap-3 rounded-md border px-4 py-2 text-sm font-medium transition-colors ${activeTab === tab.key
+                                ? "border-blue-500/60 bg-blue-600 text-white shadow-lg shadow-blue-500/20"
+                                : "border-transparent text-gray-700 hover:bg-blue-50 hover:text-blue-700 dark:text-gray-300 dark:hover:bg-gray-800/80"
+                                } `}
                         >
                             <tab.icon size={18} />
                             {tab.label}
@@ -1126,7 +1125,7 @@ const Settings = () => {
                     (canSeeCaseAccess(user?.user_role) ? (
                         <div className="space-y-6">
                             <SettingsCard
-                                title="Case Access"
+                                title="User Role"
                                 actions={
                                     <button
                                         onClick={loadUsers}
@@ -1557,7 +1556,7 @@ const Settings = () => {
                             actions={
                                 <button
                                     onClick={loadCaseTags}
-                                    className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
+                                    className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700 dark:text-slate-200"
                                 >
                                     <RefreshCw size={14} /> Refresh
                                 </button>

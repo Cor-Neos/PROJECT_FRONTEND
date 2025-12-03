@@ -159,8 +159,8 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
         const lawyer = tableData.find((u) => u.user_id === lawyerId);
         return lawyer
             ? `${lawyer.user_fname || ""} ${lawyer.user_mname ? lawyer.user_mname[0] + "." : ""} ${lawyer.user_lname || ""}`
-                  .replace(/\s+/g, " ")
-                  .trim()
+                .replace(/\s+/g, " ")
+                .trim()
             : "Unassigned";
     };
 
@@ -201,10 +201,10 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
                         type === "close"
                             ? "Completed"
                             : type === "dismiss"
-                              ? "Dismissed"
-                              : type === "archive" && selectedCase.case_status === "Completed"
-                                ? "Archived (Completed)"
-                                : "Archived (Dismissed)",
+                                ? "Dismissed"
+                                : type === "archive" && selectedCase.case_status === "Completed"
+                                    ? "Archived (Completed)"
+                                    : "Archived (Dismissed)",
                     last_updated_by: user.user_id,
                 }),
             });
@@ -290,18 +290,15 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
                                                         key={tag.ctag_id}
                                                         className="flex items-center"
                                                     >
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setSelectedTagIdx(idx)}
-                                                            className={`flex items-center whitespace-nowrap rounded-full border px-5 py-2 text-xs font-medium transition-all duration-200 focus:outline-none ${
-                                                                isSelected
-                                                                    ? "border-blue-600 bg-gradient-to-r from-blue-500 to-blue-700 text-white opacity-90 shadow-lg shadow-md"
-                                                                    : "border-blue-400 bg-white/20 text-blue-700 hover:bg-blue-100/40 hover:text-blue-900 dark:bg-slate-700/20 dark:text-blue-200 dark:hover:bg-blue-900/40 dark:hover:text-white"
-                                                            } `}
-                                                            style={{ backdropFilter: "blur(2px)" }}
+                                                        <span
+                                                            className={`flex items-center whitespace-nowrap rounded-full border px-5 py-2 text-xs font-medium ${isSelected
+                                                                ? "border-blue-600 bg-gradient-to-r from-blue-500 to-blue-700 text-white opacity-90 shadow-lg shadow-md"
+                                                                : "border-blue-400 bg-white/20 text-blue-700 dark:bg-slate-700/20 dark:text-blue-200"
+                                                                }`}
+                                                            style={{ backdropFilter: "blur(2px)", cursor: "default" }}
                                                         >
                                                             {tag.ctag_name}
-                                                        </button>
+                                                        </span>
                                                         {/* Arrow between steps, except last */}
                                                         {idx < arr.length - 1 && (
                                                             <span className="mx-2 select-none text-lg font-bold text-blue-400">→</span>
@@ -379,9 +376,9 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
                                             <span className="font-semibold">
                                                 {selectedCase?.case_fee !== null && selectedCase?.case_fee !== undefined
                                                     ? new Intl.NumberFormat("en-PH", {
-                                                          style: "currency",
-                                                          currency: "PHP",
-                                                      }).format(Number(selectedCase.case_fee))
+                                                        style: "currency",
+                                                        currency: "PHP",
+                                                    }).format(Number(selectedCase.case_fee))
                                                     : "₱0.00"}
                                             </span>
                                         </div>
@@ -401,9 +398,9 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
                                             <span>
                                                 {selectedCase?.case_balance !== null && selectedCase?.case_balance !== undefined
                                                     ? new Intl.NumberFormat("en-PH", {
-                                                          style: "currency",
-                                                          currency: "PHP",
-                                                      }).format(Number(selectedCase.case_balance))
+                                                        style: "currency",
+                                                        currency: "PHP",
+                                                    }).format(Number(selectedCase.case_balance))
                                                     : "₱0.00"}
                                             </span>
                                         </div>
@@ -439,17 +436,16 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
                                     <p>
                                         <strong>Status:</strong>{" "}
                                         <span
-                                            className={`inline-block rounded-full px-3 py-1 text-xs font-medium capitalize ${
-                                                selectedCase.case_status === "Pending"
-                                                    ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-700/20 dark:text-yellow-300"
-                                                    : selectedCase.case_status === "Processing"
-                                                      ? "bg-blue-100 text-blue-700 dark:bg-blue-700/20 dark:text-blue-300"
-                                                      : selectedCase.case_status === "Completed"
+                                            className={`inline-block rounded-full px-3 py-1 text-xs font-medium capitalize ${selectedCase.case_status === "Pending"
+                                                ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-700/20 dark:text-yellow-300"
+                                                : selectedCase.case_status === "Processing"
+                                                    ? "bg-blue-100 text-blue-700 dark:bg-blue-700/20 dark:text-blue-300"
+                                                    : selectedCase.case_status === "Completed"
                                                         ? "bg-green-100 text-green-700 dark:bg-green-700/20 dark:text-green-300"
                                                         : selectedCase.case_status === "Archived (Completed)"
-                                                          ? "bg-black text-white dark:bg-slate-200 dark:text-black"
-                                                          : "bg-gray-100 text-gray-700 dark:bg-gray-700/50 dark:text-gray-300"
-                                            }`}
+                                                            ? "bg-black text-white dark:bg-slate-200 dark:text-black"
+                                                            : "bg-gray-100 text-gray-700 dark:bg-gray-700/50 dark:text-gray-300"
+                                                }`}
                                         >
                                             {selectedCase.case_status}
                                         </span>
@@ -521,8 +517,8 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
                                                     {doc.doc_status === "todo"
                                                         ? "to do"
                                                         : doc.doc_status === "in_progress"
-                                                          ? "in progress"
-                                                          : doc.doc_status}
+                                                            ? "in progress"
+                                                            : doc.doc_status}
                                                 </td>
                                                 <td className="px-4 py-2">{doc.doc_due_date ? formatDateTime(doc.doc_due_date) : "N/A"}</td>
                                                 <td className="px-4 py-2">{getSubmitterName(doc.doc_submitted_by)}</td>

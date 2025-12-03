@@ -7,7 +7,6 @@ import Spinner from "../../components/loading.jsx";
 const API_BASE = "http://localhost:3000/api";
 
 // This file component is the Trash in the SIDEBAR 
-// PUSH FOR JOSEPH's BRANCH UPDATE
 
 export default function RecentlyDeleted({ onClose }) {
     const { user } = useAuth() || {};
