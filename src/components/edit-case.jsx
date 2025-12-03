@@ -23,7 +23,7 @@ const EditCaseModal = ({ isOpen, onClose, caseData, onUpdate, user }) => {
     const [caseCategories, setCaseCategories] = useState([]);
     const [caseCategoryTypes, setCaseCategoryTypes] = useState([]);
     const [lawyers, setLawyers] = useState([]);
-    const [caseTags, setCaseTags] = useState([]);
+    const [caseTags, setCaseTags] = useState([]); // the case_tag_list of the case which is caseData.case_tag_list
     const [errors, setErrors] = useState({});
 
     // Fetch dropdown data
@@ -35,7 +35,6 @@ const EditCaseModal = ({ isOpen, onClose, caseData, onUpdate, user }) => {
                     fetch("http://localhost:3000/api/case-categories", { credentials: "include" }),
                     fetch("http://localhost:3000/api/case-category-types", { credentials: "include" }),
                     fetch("http://localhost:3000/api/lawyer-specializations", { credentials: "include" }),
-                    fetch("http://localhost:3000/api/case-tags", { credentials: "include" }),
                 ]);
 
                 const [clientsData, categoriesData, typesData, lawyersData, tagsData] = await Promise.all([
@@ -43,14 +42,12 @@ const EditCaseModal = ({ isOpen, onClose, caseData, onUpdate, user }) => {
                     categoriesRes.json(),
                     typesRes.json(),
                     lawyersRes.json(),
-                    tagsRes.json(),
                 ]);
 
                 setClients(clientsData);
                 setCaseCategories(categoriesData);
                 setCaseCategoryTypes(typesData);
                 setLawyers(lawyersData);
-                setCaseTags(tagsData);
             } catch (err) {
                 console.error("Error fetching dropdown data:", err);
             }
@@ -64,6 +61,24 @@ const EditCaseModal = ({ isOpen, onClose, caseData, onUpdate, user }) => {
     // Populate form with existing caseData
     useEffect(() => {
         if (caseData) {
+            let parsedTags = [];
+
+            try {
+                parsedTags = Array.isArray(caseData.case_tag_list) ? caseData.case_tag_list : JSON.parse(caseData.case_tag_list || "[]");
+            } catch (err) {
+                parsedTags = [];
+            }
+
+            setCaseTags(parsedTags);
+
+            // Parse case_tag to get the current tag
+            let parsedTag = caseData.case_tag;
+            try {
+                parsedTag = typeof parsedTag === "string" ? JSON.parse(parsedTag) : parsedTag;
+            } catch (e) {
+                parsedTag = null;
+            }
+
             setFormData({
                 client_id: caseData.client_id || "",
                 cc_id: caseData.cc_id || "",
@@ -72,12 +87,12 @@ const EditCaseModal = ({ isOpen, onClose, caseData, onUpdate, user }) => {
                     user.user_role === "Lawyer"
                         ? user.user_id // lawyer always auto-assigned
                         : caseData.case_status === "Processing"
-                            ? caseData.user_id || "" // if processing, keep assigned lawyer
-                            : "", // if not processing, allow unassigned
+                          ? caseData.user_id || "" // if processing, keep assigned lawyer
+                          : "", // if not processing, allow unassigned
                 case_remarks: caseData.case_remarks || "",
                 case_cabinet: caseData.case_cabinet || "",
                 case_drawer: caseData.case_drawer || "",
-                ctag_id: caseData.ctag_id || "",
+                ctag_id: parsedTag?.ctag_id ?? "",
             });
         }
     }, [caseData]);
@@ -111,9 +126,14 @@ const EditCaseModal = ({ isOpen, onClose, caseData, onUpdate, user }) => {
     const handleSubmit = () => {
         if (!validate()) return;
 
+        // find the FULL tag object from caseTags based on selected ctag_id
+        const newSelectedTag = caseTags.find((tag) => tag.ctag_id === parseInt(formData.ctag_id));
+
         let updatedCase = {
             ...caseData,
             ...formData,
+            case_tag: newSelectedTag,
+            case_tag_list: JSON.stringify(caseTags), // keep the full list as is
         };
 
         if (updatedCase.user_id) {
@@ -242,8 +262,8 @@ const EditCaseModal = ({ isOpen, onClose, caseData, onUpdate, user }) => {
                                 {user.user_role !== "Admin"
                                     ? `${user.user_fname} ${user.user_mname} ${user.user_lname}`
                                     : !formData.cc_id
-                                        ? "Select Category first"
-                                        : "Select Lawyer"}
+                                      ? "Select Category first"
+                                      : "Select Lawyer"}
                             </option>
 
                             {user.user_role === "Admin" ? (
@@ -280,21 +300,20 @@ const EditCaseModal = ({ isOpen, onClose, caseData, onUpdate, user }) => {
                     <div>
                         <label className="text-sm font-medium text-gray-700 dark:text-white">Case Tag</label>
                         <select
-                            name="case_tag_id"
+                            name="ctag_id"
                             value={formData.ctag_id || ""}
                             onChange={handleChange}
                             className="mt-1 w-full rounded-lg border px-3 py-2 dark:bg-slate-700 dark:text-white"
-                            disabled={!!formData.ctag_id} // Disable if already set
                         >
                             {caseTags.map((tag) => (
-                                <option key={tag.ctag_id} value={tag.ctag_id}>
+                                <option
+                                    key={tag.ctag_id}
+                                    value={tag.ctag_id}
+                                >
                                     {tag.ctag_name}
                                 </option>
                             ))}
                         </select>
-                        {formData.ctag_id && (
-                            <p className="text-xs text-green-600 mt-1">Tag already added. Editing is disabled.</p>
-                        )}
                     </div>
                 </div>
 

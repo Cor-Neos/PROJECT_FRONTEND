@@ -430,7 +430,7 @@ const ViewModal = ({ selectedCase, setSelectedCase, tableData, onCaseUpdated }) 
 
                                     {selectedCase.case_last_updated && (
                                         <p>
-                                            <strong>Last Updated:</strong>
+                                            <strong>Last Update:</strong>
                                             <span className="ml-2 text-slate-500">{formatDateTime(selectedCase.case_last_updated)}</span>
                                         </p>
                                     )}

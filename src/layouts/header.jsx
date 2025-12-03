@@ -78,6 +78,7 @@ export const Header = ({ collapsed, setCollapsed }) => {
     };
 
     const [unreadCount, setUnreadCount] = useState(0);
+
     useEffect(() => {
         fetchUnreadCount();
     }, []);

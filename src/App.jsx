@@ -22,7 +22,6 @@ import Reports from "./routes/sidebar/reports";
 import UserLogs from "./routes/sidebar/user-logs";
 import Archives from "./routes/sidebar/archives";
 import Notifications from "./components/notifications";
-import NotificationSettings from "./components/notif-settings";
 import { UnauthorizedAccess } from "./auth/unauthorized";
 import ClientContact from "./components/client-contacts";
 import ChangePass from "./auth/changepass";
@@ -78,9 +77,8 @@ export default function App() {
                         { path: "user-logs", element: <UserLogs /> },
                         { path: "case-archive", element: <Archives /> },
                         { path: "notifications", element: <Notifications /> },
-                        { path: "notifications/notif-settings", element: <NotificationSettings /> },
                         { path: "payments", element: <Payments /> },
-                        { path: "trash", element: <RecentlyDeleted/> },
+                        { path: "trash", element: <RecentlyDeleted /> },
                         { path: "settings", element: <Settings /> },
                     ],
                 },
